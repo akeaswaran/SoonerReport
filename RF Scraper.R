@@ -10,10 +10,13 @@ rf_nodes <- rf_html %>%
     html_nodes("[class^=\"ForecastActivity_forecastActivity__\"] > [class^=\"ForecastActivity_activityText__\"]")
 
 column <- function(x) rf_nodes %>% html_node(css = x) %>% html_text()
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
 rf <- data.frame(
-    author = column("[class^=\"ForecastActivity_forecastText__\"] > b"),
-    text = column("[class^=\"ForecastActivity_forecastText__\"]"),
+    author = column("[class^=\"ForecastActivity_forecastText__\"] > b:nth-child(1)"),
+    recruit = column("[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2)"),
+    profile_url = rf_nodes %>% html_node("[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2) > a") %>% html_attr('href'),
+    full_text = column("[class^=\"ForecastActivity_forecastText__\"]"),
     time_since = column("[class^=\"ForecastActivity_forecastTime__\"]"),
     stringsAsFactors = FALSE
 )
@@ -21,6 +24,8 @@ rf <- data.frame(
 now <- now()
 rf <- rf %>%
     mutate(
+        author = trim(author),
+        recruit = trim(recruit),
         time_since = gsub(" ago", "", time_since),
         unit_elapsed = case_when(
             grepl("s", time_since) == TRUE ~ "second",
