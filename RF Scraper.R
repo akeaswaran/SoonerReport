@@ -15,10 +15,21 @@ forecast_nodes <- rf_html %>%
 
 forecasters <- data.frame(
     title = column(forecast_nodes, "[class^=\"ForecasterThumbnail_forecasterTitle__\"]"),
-    name = column(forecast_nodes, "[class^=\"Link_link__1xDdm ForecasterThumbnail_forecasterName__\"]"),
+    first_name = column(forecast_nodes, "[class^=\"Link_link__1xDdm ForecasterThumbnail_forecasterName__\"] > div:nth_child(1)"),
+    last_name = column(forecast_nodes, "[class^=\"Link_link__1xDdm ForecasterThumbnail_forecasterName__\"] > div:nth_child(2)"),
     accuracy = column(forecast_nodes, "[class^=\"ForecasterThumbnail_forecasterAccuracy__\"]"),
     stringsAsFactors = FALSE
 )
+
+forecasters <- forecasters %>%
+    mutate(
+        title = trim(title),
+        first_name = trim(first_name),
+        last_name = trim(last_name),
+        full_name = glue("{first_name} {last_name}"),
+        accuracy = as.numeric(gsub("% accuracy", "", accuracy))
+    ) %>%
+    select(full_name, title, accuracy)
 
 
 # ----- FutureCasts -----
