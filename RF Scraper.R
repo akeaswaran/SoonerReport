@@ -1,11 +1,16 @@
 library(rvest)
 library(tidyverse)
-library(rtweet)
 library(lubridate)
 library(glue)
+library(httr)
+library(jsonlite)
+library(stringr)
 
-trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+selected_school <- "Georgia Tech"
+
+trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t|\\t$", "", x))
 column <- function(x, css) x %>% html_node(css = css) %>% html_text()
+# splitJoin <- function(x) strsplit(x, split="\\s") %>% trim() %>% .[lapply(., length) > 0] %>% unlist() %>% paste()
 
 rf_html <- read_html("https://n.rivals.com/futurecast")
 
@@ -37,9 +42,6 @@ forecasters <- forecasters %>%
 fc_nodes <- rf_html %>%
     html_nodes("[class^=\"ForecastActivity_forecastActivity__\"] > [class^=\"ForecastActivity_activityText__\"]")
 
-
-
-
 futurecasts <- data.frame(
     forecaster = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"] > b:nth-child(1)"),
     recruit = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2)"),
@@ -68,8 +70,104 @@ futurecasts <- futurecasts %>%
             unit_elapsed == "minute" ~ (now %m-% minutes(value_elapsed)),
             unit_elapsed == "hour" ~ (now%m-% hours(value_elapsed)),
             unit_elapsed == "day" ~ (now %m-% days(value_elapsed))
-        )
+        ),
+        player_id = as.numeric(sub(".*-", "", profile_url)),
+        year = str_extract(full_text, "\\((\\d{4}),"),
+        year = sub("\\D","", year),
+        year = sub(",","", year),
+        forecasted_team = str_extract(full_text, "to (.*)\\."),
+        forecasted_team = sub("to ","", forecasted_team),
+        forecasted_team = sub("\\.","", forecasted_team),
     ) %>%
+    # filter(
+    #     grepl(selected_school, full_text) == TRUE
+    # ) %>%
     select(-time_since, -unit_elapsed, -value_elapsed)
+
+# https://github.com/SometimesY/CrootBot/blob/master/getRivals.py
+strip_suffix <- function(name) {
+    name <- trim(name)
+    result <- case_when(
+        grepl(' Jr$', name) ~ gsub("Jr","", name),
+        grepl(' Jr\\.$', name) ~ gsub("Jr.","", name),
+        grepl(' II$', name) ~ gsub("II","", name),
+        grepl(' III$', name) ~ gsub("III","", name),
+        grepl(' IV$', name) ~ gsub("IV","", name),
+        grepl(' V$', name) ~ gsub("V","", name),
+        grepl(' VI$', name) ~ gsub("VI","", name),
+        grepl(' VII$', name) ~ gsub("VII","", name),
+        TRUE ~ trim(name)
+    )
+    return(result)
+}
+
+query_croots <- function(name, year) {
+    body <- paste0("{
+        \"search\": {
+            \"member\": \"Prospect\",
+            \"query\": \",",strip_suffix(name),",\",
+            \"sport\": \"Football\",
+            \"page_number\": \"1\",
+            \"page_size\": \"50\",
+            \"recruit_year\": \"",year,"\"
+        }
+    }")
+    croot_req <- POST("https://n.rivals.com/api/v1/people", add_headers(
+        "User-Agent"="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:85.0) Gecko/20100101 Firefox/85.0",
+        Accept="application/json, text/plain, */*",
+        "Accept-Language"="en-US,en;q=0.5",
+        Referer="https://n.rivals.com/search",
+        "Content-Type"="application/json;charset=utf-8",
+        "X-XSRF-TOKEN"="JWSTp21Yj1wpNjaVz7W7x/wNgbUCNxLTFP0oHbOtYWUXdXMt2hvX+NQ3ejC8as5FAb1RE/KwiH3bY4SlsEl+Sg==",
+        "Origin"="https://n.rivals.com",
+        "Connection"="keep-alive",
+        "Cookie"="A1=d=AQABBL_NHmACEKNsUb5rZatSKxxQNn_WTEQFEgEBAQEfIGAoYAAAAAAA_SMAAA&S=AQAAAkKziEj7gaF2mOKKRDUJWqg; A3=d=AQABBL_NHmACEKNsUb5rZatSKxxQNn_WTEQFEgEBAQEfIGAoYAAAAAAA_SMAAA&S=AQAAAkKziEj7gaF2mOKKRDUJWqg; A1S=d=AQABBL_NHmACEKNsUb5rZatSKxxQNn_WTEQFEgEBAQEfIGAoYAAAAAAA_SMAAA&S=AQAAAkKziEj7gaF2mOKKRDUJWqg; GUC=AQEBAQFgIB9gKEId1wSk; XSRF-TOKEN=JWSTp21Yj1wpNjaVz7W7x%2FwNgbUCNxLTFP0oHbOtYWUXdXMt2hvX%2BNQ3ejC8as5FAb1RE%2FKwiH3bY4SlsEl%2BSg%3D%3D; _rivalry_session_v2=ZWZZQVZSQVh3ZnNaSWxaZlgwNU95aXV3a3VFREM2SE9iME9wZG4yaERvd0hHNjJOekhGZG1BOHo4WDM5OFdCSnFCczRWQ0hKelRzMWJna1NDZXV3MndjNHhaZlU1S0ZEdmJFaTVUR1doQ1RHdUJhRlQxUis2cWRBblUyVlhKcXVnVHE0aFlDODZscVMvQWxwRWxQUmpwUGk4QWdXRWUwdTlIZ2lxUk5YdzlJa3RxVVdac3lBdGRiQkxBOEErYXl2djNGT1dXa1g0c3ozSHJJdDZyMkNFZmd0eDZhUmE5TVFHU2RLc045RHlqMFFjUjJvbzVVOU9MNG9ORU9qdHY4K21wTjdtVlNVVU1KWTFNWlY0MUp6eDY3cnNZMHdNYVg5aGQ5TUZoM2doZnZEK1NvWkRkNjBiVVFlYmlyTzVqb21WVFlRRXlmWEVZSmtHZTVsc0tENkdBPT0tLVNNQmpEbzFNMGI1blVuKzVyR1Q3SFE9PQ%3D%3D--0947bcffa7fd9b9703f5522cb9afa8fac7d83254; GUCS=Ae_tyY5k; ywandp=10002066977754%3A1333922239; _cb_ls=1; _ga=GA1.2.770716812.1612631490; _gid=GA1.2.1018170693.1612631490; _gat=1; A1=d=AQABBL_NHmACEKNsUb5rZatSKxxQNn_WTEQFEgEBAQEfIGAoYAAAAAAA_SMAAA&S=AQAAAkKziEj7gaF2mOKKRDUJWqg; A1S=d=AQABBL_NHmACEKNsUb5rZatSKxxQNn_WTEQFEgEBAQEfIGAoYAAAAAAA_SMAAA&S=AQAAAkKziEj7gaF2mOKKRDUJWqg; A3=d=AQABBL_NHmACEKNsUb5rZatSKxxQNn_WTEQFEgEBAQEfIGAoYAAAAAAA_SMAAA&S=AQAAAkKziEj7gaF2mOKKRDUJWqg; GUC=AQEBAQFgIB9gKEId1wSk; _rivalry_session_v2=QW9Cckk0MGF3bnZtSFBLMFVhNlp3M281bFkzajM0dW9KWjh5clJEUWNNVytqU0w5dDg4OGJFY0NiMDNLZ0N1b3g2NEhWcVNvWm40QVdDNmlROGozMXJGazdMQmsrWUo0ZitnZkhHSFcweERuQkwxNUdQdmFESng0bTdPZlJPcTlhYy94QndBNlNWdERSMzRMVWtSbHFxT1l1VlB3eC9TbGN0OFJId2R0S1AwRE16R09GcDArbDVSUVFWcldxQzFoekJibkxNWjVQOVlRZS9vZVBkcTVpWkFqYUFIRkhLMVluaktxdllUNDRUWGw2SjdteDR3K2VHbmk0TytGWFZHdzVJaUNhanN3OFNlbDlxVGMxVEFNeXUrWFVORmt2N0ZkYnVBRUVEaEtJRTBjbHUzSUxiemRiZU8wN3hqZGJDcFA4Nnk3eDJHOGVRVzdmb2pRYUNNNDJnPT0tLXJ4c1ZUUjFXY0dqUHltWE1sSitjUHc9PQ%3D%3D--ab9e9cd73c80953acce2a86a86eb53ab3b0bfabf",
+        "TE"="Trailers"
+    ), body = body, encode = "json")
+
+    result <- content(croot_req, "text")
+    result <- fromJSON(result)$people
+    return(result)
+}
+
+get_croot_info <- function(name, player_id, year) {
+    result <- query_croots(name, year)
+    result <- result %>%
+        filter(
+            as.numeric(prospect_id) == as.numeric(player_id)
+        ) %>%
+        head(1)
+    return(result)
+}
+
+# View(get_croot_info("CHRIS PARSON", "258655", 2023))
+expanded_data <- data.frame()
+player_slim_list <- futurecasts %>%
+    select(recruit, player_id, year)
+total <- nrow(player_slim_list)
+
+for (row in 1:total) {
+    player_id <- player_slim_list[row, "player_id"]
+    name  <- trim(player_slim_list[row, "recruit"])
+    year  <- player_slim_list[row, "year"]
+
+    tryCatch(
+        {
+            message(glue("Starting loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
+            result <- get_croot_info(name, player_id, year)
+            expanded_data <- rbind(expanded_data, result)
+        },
+        error = function(cond) {
+            message(paste("Error: ", cond))
+        },
+        finally = {
+            message(glue("Done loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
+        }
+    )
+}
+
+futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id"))
+
+
 
 
