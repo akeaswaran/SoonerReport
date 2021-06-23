@@ -4,27 +4,44 @@ library(rtweet)
 library(lubridate)
 library(glue)
 
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+column <- function(x, css) x %>% html_node(css = css) %>% html_text()
+
 rf_html <- read_html("https://n.rivals.com/futurecast")
 
-rf_nodes <- rf_html %>%
+# ----- FutureCast Forecasters -----
+forecast_nodes <- rf_html %>%
+    html_nodes("[class^=\"ForecasterThumbnail_forecasterInformation__\"]")
+
+forecasters <- data.frame(
+    title = column(forecast_nodes, "[class^=\"ForecasterThumbnail_forecasterTitle__\"]"),
+    name = column(forecast_nodes, "[class^=\"Link_link__1xDdm ForecasterThumbnail_forecasterName__\"]"),
+    accuracy = column(forecast_nodes, "[class^=\"ForecasterThumbnail_forecasterAccuracy__\"]"),
+    stringsAsFactors = FALSE
+)
+
+
+# ----- FutureCasts -----
+
+fc_nodes <- rf_html %>%
     html_nodes("[class^=\"ForecastActivity_forecastActivity__\"] > [class^=\"ForecastActivity_activityText__\"]")
 
-column <- function(x) rf_nodes %>% html_node(css = x) %>% html_text()
-trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
-rf <- data.frame(
-    author = column("[class^=\"ForecastActivity_forecastText__\"] > b:nth-child(1)"),
-    recruit = column("[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2)"),
-    profile_url = rf_nodes %>% html_node("[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2) > a") %>% html_attr('href'),
-    full_text = column("[class^=\"ForecastActivity_forecastText__\"]"),
-    time_since = column("[class^=\"ForecastActivity_forecastTime__\"]"),
+
+
+futurecasts <- data.frame(
+    forecaster = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"] > b:nth-child(1)"),
+    recruit = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2)"),
+    profile_url = fc_nodes %>% html_node("[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2) > a") %>% html_attr('href'),
+    full_text = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"]"),
+    time_since = column(fc_nodes, "[class^=\"ForecastActivity_forecastTime__\"]"),
     stringsAsFactors = FALSE
 )
 
 now <- now()
-rf <- rf %>%
+futurecasts <- futurecasts %>%
     mutate(
-        author = trim(author),
+        forecaster = trim(forecaster),
         recruit = trim(recruit),
         time_since = gsub(" ago", "", time_since),
         unit_elapsed = case_when(
