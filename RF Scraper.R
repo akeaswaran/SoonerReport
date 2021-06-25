@@ -6,10 +6,9 @@ library(httr)
 library(jsonlite)
 library(stringr)
 
-selected_school <- "Georgia Tech"
-
 trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t|\\t$", "", x))
 column <- function(x, css) x %>% html_node(css = css) %>% html_text()
+
 # splitJoin <- function(x) strsplit(x, split="\\s") %>% trim() %>% .[lapply(., length) > 0] %>% unlist() %>% paste()
 
 rf_html <- read_html("https://n.rivals.com/futurecast")
@@ -51,7 +50,7 @@ futurecasts <- data.frame(
     stringsAsFactors = FALSE
 )
 
-now <- now()
+now <- now(tz = "UTC")
 futurecasts <- futurecasts %>%
     mutate(
         forecaster = trim(forecaster),
@@ -79,9 +78,11 @@ futurecasts <- futurecasts %>%
         forecasted_team = sub("to ","", forecasted_team),
         forecasted_team = sub("\\.","", forecasted_team),
     ) %>%
-    # filter(
-    #     grepl(selected_school, full_text) == TRUE
-    # ) %>%
+    filter(
+        (grepl(selected_school, forecasted_team) == TRUE) &
+        (interval(last_updated, date) >= 0) &
+        (as.numeric(year) == as.numeric(target_year))
+    ) %>%
     select(-time_since, -unit_elapsed, -value_elapsed)
 
 # https://github.com/SometimesY/CrootBot/blob/master/getRivals.py
@@ -140,33 +141,36 @@ get_croot_info <- function(name, player_id, year) {
     return(result)
 }
 
-# View(get_croot_info("CHRIS PARSON", "258655", 2023))
 expanded_data <- data.frame()
 player_slim_list <- futurecasts %>%
     select(recruit, player_id, year)
 total <- nrow(player_slim_list)
 
-for (row in 1:total) {
-    player_id <- player_slim_list[row, "player_id"]
-    name  <- trim(player_slim_list[row, "recruit"])
-    year  <- player_slim_list[row, "year"]
+if (total > 0) {
+    for (row in 1:total) {
+        player_id <- player_slim_list[row, "player_id"]
+        name  <- trim(player_slim_list[row, "recruit"])
+        year  <- player_slim_list[row, "year"]
 
-    tryCatch(
-        {
-            message(glue("Starting loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
-            result <- get_croot_info(name, player_id, year)
-            expanded_data <- rbind(expanded_data, result)
-        },
-        error = function(cond) {
-            message(paste("Error: ", cond))
-        },
-        finally = {
-            message(glue("Done loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
-        }
-    )
+        tryCatch(
+            {
+                message(glue("Starting loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
+                result <- get_croot_info(name, player_id, year)
+                expanded_data <- rbind(expanded_data, result)
+            },
+            error = function(cond) {
+                message(paste("Error: ", cond))
+            },
+            finally = {
+                message(glue("Done loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
+            }
+        )
+    }
+
+    futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
+} else {
+    futurecasts <- data.frame()
 }
-
-futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id"))
 
 
 
