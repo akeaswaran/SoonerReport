@@ -77,10 +77,13 @@ futurecasts <- futurecasts %>%
         forecasted_team = str_extract(full_text, "to (.*)\\."),
         forecasted_team = sub("to ","", forecasted_team),
         forecasted_team = sub("\\.","", forecasted_team),
+        elapsed = as.double(difftime(date,
+                                     last_updated,
+                                     units = "secs"))
     ) %>%
     filter(
         (grepl(selected_school, forecasted_team) == TRUE) &
-        (interval(last_updated, date) >= 0) &
+        (elapsed >= 0) &
         (as.numeric(year) == as.numeric(target_year))
     ) %>%
     select(-time_since, -unit_elapsed, -value_elapsed)
