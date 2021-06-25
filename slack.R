@@ -1,5 +1,7 @@
 library(slackr)
 library(glue)
+library(stringr)
+library(lubridate)
 
 # Configurable environment variables
 selected_school <- Sys.getenv("TARGET_SCHOOL")
