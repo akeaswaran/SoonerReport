@@ -34,7 +34,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
         message(glue("Found Recent Rivals FutureCast for {selected_school}: {name} (ID: {player_id}, Year: {year})"))
     }
 } else {
-    message(glue("No recent Rivals FutureCasts found for {target_year} & {selected_school} since {last_updated}"))
+    message(glue("No recent Rivals FutureCasts found for {selected_school} class of {target_year} since {last_updated}"))
 }
 
 # ----- Data from 247 -----
@@ -94,7 +94,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         message(text)
     }
 } else {
-    message(glue("No recent 247 Crystal Balls found for class of {target_year} & {selected_school} since {last_updated}"))
+    message(glue("No recent 247 Crystal Balls found for class of {selected_school} class of {target_year} since {last_updated}"))
 }
 
 # slackr_setup(
