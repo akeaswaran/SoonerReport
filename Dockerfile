@@ -1,13 +1,10 @@
-FROM rocker/tidyverse:4.0.3
+FROM rocker/tidyverse:4.1.0
 
 WORKDIR /src
 
 # Install R packages
 RUN install2.r --error \
-    rvest \
     tidyverse \
-    lubridate \
-    glue \
     httr \
     jsonlite \
     stringr \
