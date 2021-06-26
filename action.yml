@@ -14,16 +14,16 @@ inputs:
     description: 'If you want Slack posts enabled. If so, you must configure the environment variables below.'
     required: false
     default: false
-  bot_user_oauth_token:
+  slack_bot_user_oauth_token:
     description: "Slack Bot User OAuth Token. Head to api.slack.com for more details."
     required: false
-  channel:
+  slack_channel:
     description: "Slack Channel to post to. Head to api.slack.com for more details."
     required: false
-  username:
+  slack_username:
     description: "Slack Username for the bot. Head to api.slack.com for more details."
     required: false
-  incoming_webhook_url:
+  slack_incoming_webhook_url:
     description: "Slack Webhook to use for the bot. Head to api.slack.com for more details."
     required: false
 runs:
@@ -33,7 +33,7 @@ runs:
     TARGET_YEAR: ${{ inputs.target_year }}
     TARGET_SCHOOL: ${{ inputs.target_school }}
     SLACK_ENABLED: ${{ inputs.slack_enabled }}
-    SLACK_BOT_USER_OAUTH_TOKEN: ${{ inputs.bot_user_oauth_token }}
-    SLACK_INCOMING_URL_PREFIX: ${{ inputs.incoming_webhook_url }}
-    SLACK_USERNAME: ${{ inputs.username }}
-    SLACK_CHANNEL: ${{ inputs.channel }}
+    SLACK_BOT_USER_OAUTH_TOKEN: ${{ inputs.slack_bot_user_oauth_token }}
+    SLACK_INCOMING_URL_PREFIX: ${{ inputs.slack_incoming_webhook_url }}
+    SLACK_USERNAME: ${{ inputs.slack_username }}
+    SLACK_CHANNEL: ${{ inputs.slack_channel }}

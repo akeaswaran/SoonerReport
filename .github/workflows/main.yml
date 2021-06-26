@@ -19,7 +19,11 @@ jobs:
             with:
               target_school: 'Georgia Tech'
               target_year: "2022"
-              slack_enabled: false
+              slack_enabled: true
+              slack_channel: ${{ secrets.SLACK_CHANNEL }}
+              slack_username: ${{ secrets.SLACK_USERNAME }}
+              slack_bot_user_oauth_token: ${{ secrets.SLACK_BOT_USER_OAUTH_TOKEN }}
+              slack_incoming_webhook_url: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
           - name: Update last_updated
             uses: kludex/update-file@0.6.1
             with:
