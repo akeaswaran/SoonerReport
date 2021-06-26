@@ -10,13 +10,18 @@ To build, clone the repo and:
 docker build . -t soonerreport:main
 ```
 
-and then to run like it would in GitHub Actions:
+and then to run like it would in GitHub Actions (Slack posting disabled):
 
 ```
-docker run -e INPUT_TARGET-SCHOOL='Georgia Tech' --env INPUT_TARGET-YEAR=2022 soonerreport:main
+docker run --env TARGET_SCHOOL='Georgia Tech' --env TARGET_YEAR=2022 --env SLACK_ENABLED=false soonerreport:main
 ```
 
 Bot variables are configurable in `.github/workflows/main.yml`.
+
+Note: Posting to Slack will fail until you configure the right environment variables in GitHub Actions/local Docker runs. 
+    - Note: `slackr` also supports `.dcf` files for configuration instead of environment variables. These are automatically ignored in commits to _this_ repo, but if you use one locally, take care to make sure you don't commit one to source accidentally.
+    - See `slackr`'s documentation for more details on how to configure a `config.dcf` file: https://mrkaye97.github.io/slackr/reference/slackr_setup.html
+    - Also, make sure to set `SLACK_ENABLED` to `true` in `.github/workflows/main.yml` or as a local environment variable.
 
 ---
 

@@ -2,17 +2,38 @@
 name: 'SoonerReport'
 description: 'Automated recruiting updates from 247Sports and Rivals.'
 inputs:
-  target-year:
+  target_year:
     description: 'Which year to query for.'
     required: true
     default: '2022'
-  target-school:
+  target_school:
     description: 'Which school to query for.'
     required: true
     default: 'Georgia Tech'
+  slack_enabled:
+    description: 'If you want Slack posts enabled. If so, you must configure the environment variables below.'
+    required: false
+    default: false
+  bot_user_oauth_token:
+    description: "Slack Bot User OAuth Token. Head to api.slack.com for more details."
+    required: false
+  channel:
+    description: "Slack Channel to post to. Head to api.slack.com for more details."
+    required: false
+  username:
+    description: "Slack Username for the bot. Head to api.slack.com for more details."
+    required: false
+  incoming_webhook_url:
+    description: "Slack Webhook to use for the bot. Head to api.slack.com for more details."
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
   env:
-    TARGET_YEAR: ${{ inputs.target-year }}
-    TARGET_SCHOOL: ${{ inputs.target-school }}
+    TARGET_YEAR: ${{ inputs.target_year }}
+    TARGET_SCHOOL: ${{ inputs.target_school }}
+    SLACK_ENABLED: ${{ inputs.slack_enabled }}
+    SLACK_BOT_USER_OAUTH_TOKEN: ${{ inputs.bot_user_oauth_token }}
+    SLACK_INCOMING_URL_PREFIX: ${{ inputs.incoming_webhook_url }}
+    SLACK_USERNAME: ${{ inputs.username }}
+    SLACK_CHANNEL: ${{ inputs.channel }}

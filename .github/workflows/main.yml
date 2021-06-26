@@ -12,15 +12,14 @@ jobs:
         runs-on: ubuntu-latest
         name: Pulling latest recruit predictions
         steps:
-          # To use this repository's private action,
-          # you must check out the repository
           - name: Checkout
             uses: actions/checkout@v2
-          - name: Pull recruit reports
-            uses: ./ # Uses an action in the root directory
+          - name: Pull recruit reports and post to Slack
+            uses: ./
             with:
-              target-school: 'Georgia Tech'
-              target-year: "2022"
+              target_school: 'Georgia Tech'
+              target_year: "2022"
+              slack_enabled: false
           - name: Update last_updated
             uses: kludex/update-file@0.6.1
             with:

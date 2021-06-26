@@ -8,6 +8,8 @@ selected_school <- Sys.getenv("TARGET_SCHOOL")
 selected_school <- ifelse(is.na(selected_school) || str_length(selected_school) == 0, "Georgia Tech", selected_school)
 target_year <- Sys.getenv("TARGET_YEAR")
 target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, 2022, target_year)
+slack_enabled <- Sys.getenv("SLACK_ENABLED")
+slack_enabled <- !(is.na(slack_enabled) || str_length(slack_enabled) == 0 || tolower(as.character(slack_enabled)) == "false" || slack_enabled == FALSE)
 
 last_updated <- tryCatch(
     {
@@ -21,6 +23,31 @@ last_updated <- tryCatch(
     }
 )
 
+if (slack_enabled) {
+    if (!file.exists("./config.dcf")) {
+        message("No config file found, using environment variables to create one")
+        create_config_file(
+            filename = "./config.dcf",
+            bot_user_oauth_token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
+            incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
+            username = Sys.getenv("SLACK_USERNAME"),
+            channel = Sys.getenv("SLACK_CHANNEL")
+        )
+    }
+    slackr_setup(
+        config_file = "./config.dcf"
+    )
+} else {
+    message("Slack support disabled, messages will not be sent.")
+}
+
+slack_send <- function(msg) {
+    message(msg)
+    if (slack_enabled) {
+        slackr_msg(msg)
+    }
+}
+
 source("./RF Scraper.R") # Rivals scraper
 source("./CB Scraper Run.R")  # 247 scraper
 
@@ -31,10 +58,10 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
         name  <- trim(futurecasts[row, "recruit"])
         year  <- futurecasts[row, "year"]
 
-        message(glue("Found Recent Rivals FutureCast for {selected_school}: {name} (ID: {player_id}, Year: {year})"))
+        slack_send(glue("Found recent Rivals FutureCast for {selected_school}: {name} (ID: {player_id}, Year: {year})"))
     }
 } else {
-    message(glue("No recent Rivals FutureCasts found for {selected_school} class of {target_year} since {last_updated}"))
+    slack_send(glue("No recent Rivals FutureCasts found for class of {selected_school} class of {target_year} since {last_updated}"))
 }
 
 # ----- Data from 247 -----
@@ -91,17 +118,13 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
                 {link}
             ")
         }
-        message(text)
+        slack_send(text)
     }
 } else {
-    message(glue("No recent 247 Crystal Balls found for class of {selected_school} class of {target_year} since {last_updated}"))
+    slack_send(glue("No recent 247 Crystal Balls found for class of {selected_school} class of {target_year} since {last_updated}"))
 }
 
-# slackr_setup(
-#     config_file = "./config.dcf"
-# )
-# slackr(glue(""),
-#            channel="#gtrecruiting",
-#            icon_emoji="")
-
-
+if (slack_enabled) {
+    message("Tearing down Slack bot...")
+    slackr_teardown()
+}
