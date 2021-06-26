@@ -1,4 +1,4 @@
-name: Scheduled Bot
+name: SoonerReport Scheduled Run
 on:
   push:
     branches:
@@ -24,8 +24,12 @@ jobs:
               slack_username: ${{ secrets.SLACK_USERNAME }}
               slack_bot_user_oauth_token: ${{ secrets.SLACK_BOT_USER_OAUTH_TOKEN }}
               slack_incoming_webhook_url: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
-          - name: Update last_updated
-            uses: kludex/update-file@0.6.1
+          - name: Update last_updated date file
+            run: python ./update_latest.py
+          - name: Push last_updated file
+            uses: test-room-7/action-update-file@v1.5.0
             with:
-              script_file: update_latest.py
-              update_file: last_updated.json
+              file-path: ./last_updated.json
+              commit-msg: "Updated last_updated.json date after latest bot run."
+              github_token: ${{ secrets.GITHUB_TOKEN }}
+
