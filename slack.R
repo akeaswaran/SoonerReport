@@ -2,6 +2,8 @@ library(slackr)
 library(glue)
 library(stringr)
 library(lubridate)
+library(logging)
+basicConfig()
 
 # Configurable environment variables
 selected_school <- Sys.getenv("TARGET_SCHOOL")
@@ -18,14 +20,15 @@ last_updated <- tryCatch(
         ymd_hms(tmp, tz = "UTC")
     },
     error = function(cond) {
-        message("No last_updated file found, using current date")
+        loginfo("No last_updated file found, using current date")
         now()
     }
 )
+loginfo(glue("Last updated recruits at: {last_updated}"))
 
 if (slack_enabled) {
     if (!file.exists("./config.dcf")) {
-        message("No config file found, using environment variables to create one")
+        loginfo("No config file found, using environment variables to create one")
         create_config_file(
             filename = "./config.dcf",
             bot_user_oauth_token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
@@ -38,11 +41,11 @@ if (slack_enabled) {
         config_file = "./config.dcf"
     )
 } else {
-    message("Slack support disabled, messages will not be sent.")
+    loginfo("Slack support disabled, messages will not be sent.")
 }
 
 slack_send <- function(msg) {
-    message(msg)
+    loginfo(glue("Sending message: {msg}"))
     if (slack_enabled) {
         slackr_msg(msg)
     }
@@ -53,19 +56,21 @@ source("./CB Scraper Run.R")  # 247 scraper
 
 # ----- Data from Rivals -----
 if (exists("futurecasts") && nrow(futurecasts) > 0) {
+    loginfo("Iterating through futurecasts and sending messages...")
     for (row in 1:nrow(futurecasts)) {
         player_id <- futurecasts[row, "player_id"]
         name  <- trim(futurecasts[row, "recruit"])
         year  <- futurecasts[row, "year"]
-
         slack_send(glue("Found recent Rivals FutureCast for {selected_school}: {name} (ID: {player_id}, Year: {year})"))
     }
 } else {
+    loginfo("No futurecasts to send messages for")
     slack_send(glue("No recent Rivals FutureCasts found for class of {selected_school} class of {target_year} since {last_updated}"))
 }
 
 # ----- Data from 247 -----
 if (exists("new_cbs") && nrow(new_cbs) > 0) {
+    loginfo("Iterating through Crystal Balls and sending messages...")
     for(i in 1:nrow(new_pred)){
 
         pred <- new_pred %>% slice(i)
@@ -121,10 +126,11 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         slack_send(text)
     }
 } else {
+    loginfo("No Crystal Balls to send messages for")
     slack_send(glue("No recent 247 Crystal Balls found for class of {selected_school} class of {target_year} since {last_updated}"))
 }
 
 if (slack_enabled) {
-    message("Tearing down Slack bot...")
+    loginfo("Tearing down Slack integration after use")
     slackr_teardown()
 }

@@ -8,7 +8,8 @@ RUN install2.r --error \
     httr \
     jsonlite \
     stringr \
-    slackr
+    slackr \
+    logging
 
 COPY . .
 

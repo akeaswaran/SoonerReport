@@ -5,6 +5,10 @@ library(glue)
 library(httr)
 library(jsonlite)
 library(stringr)
+library(logging)
+basicConfig()
+
+loginfo("Starting Rivals FutureCast scraping...")
 
 trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t|\\t$", "", x))
 column <- function(x, css) x %>% html_node(css = css) %>% html_text()
@@ -14,9 +18,11 @@ column <- function(x, css) x %>% html_node(css = css) %>% html_text()
 rf_html <- read_html("https://n.rivals.com/futurecast")
 
 # ----- FutureCast Forecasters -----
+loginfo("Looking for Forecaster information...")
 forecast_nodes <- rf_html %>%
     html_nodes("[class^=\"ForecasterThumbnail_forecasterInformation__\"]")
 
+loginfo(glue("Found {length(forecast_nodes)} forecaster nodes. Parsing..."))
 forecasters <- data.frame(
     title = column(forecast_nodes, "[class^=\"ForecasterThumbnail_forecasterTitle__\"]"),
     first_name = column(forecast_nodes, "[class^=\"Link_link__1xDdm ForecasterThumbnail_forecasterName__\"] > div:nth_child(1)"),
@@ -25,6 +31,7 @@ forecasters <- data.frame(
     stringsAsFactors = FALSE
 )
 
+loginfo(glue("Parsed {nrow(forecasters)} forecaster rows. Cleaning..."))
 forecasters <- forecasters %>%
     mutate(
         title = trim(title),
@@ -35,12 +42,15 @@ forecasters <- forecasters %>%
     ) %>%
     select(full_name, title, accuracy)
 
+loginfo(glue("Found/parsed/cleaned {nrow(forecasters)} forecaster rows"))
 
 # ----- FutureCasts -----
+loginfo(glue("Looking for recruit futurecast nodes..."))
 
 fc_nodes <- rf_html %>%
     html_nodes("[class^=\"ForecastActivity_forecastActivity__\"] > [class^=\"ForecastActivity_activityText__\"]")
 
+loginfo(glue("Found {length(fc_nodes)} recruit futurecast nodes, parsing..."))
 futurecasts <- data.frame(
     forecaster = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"] > b:nth-child(1)"),
     recruit = column(fc_nodes, "[class^=\"ForecastActivity_forecastText__\"] > b:nth_child(2)"),
@@ -49,6 +59,9 @@ futurecasts <- data.frame(
     time_since = column(fc_nodes, "[class^=\"ForecastActivity_forecastTime__\"]"),
     stringsAsFactors = FALSE
 )
+
+loginfo(glue("Found {nrow(futurecasts)} recruit futurecast rows,."))
+loginfo(glue("Cleaning and filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
 
 now <- now(tz = "UTC")
 futurecasts <- futurecasts %>%
@@ -87,6 +100,8 @@ futurecasts <- futurecasts %>%
         (as.numeric(year) == as.numeric(target_year))
     ) %>%
     select(-time_since, -unit_elapsed, -value_elapsed)
+
+loginfo(glue("Found {nrow(futurecasts)} FutureCasts that match criteria"))
 
 # https://github.com/SometimesY/CrootBot/blob/master/getRivals.py
 strip_suffix <- function(name) {
@@ -150,6 +165,7 @@ player_slim_list <- futurecasts %>%
 total <- nrow(player_slim_list)
 
 if (total > 0) {
+    loginfo(glue("Retrieving expanded info from Rivals API for {nrow(futurecasts)} recruits"))
     for (row in 1:total) {
         player_id <- player_slim_list[row, "player_id"]
         name  <- trim(player_slim_list[row, "recruit"])
@@ -157,21 +173,23 @@ if (total > 0) {
 
         tryCatch(
             {
-                message(glue("Starting loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
+                loginfo(glue("Starting loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
                 result <- get_croot_info(name, player_id, year)
                 expanded_data <- rbind(expanded_data, result)
             },
             error = function(cond) {
-                message(paste("Error: ", cond))
+                logwarn(paste("Error: ", cond))
             },
             finally = {
-                message(glue("Done loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
+                loginfo(glue("Done loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
             }
         )
     }
 
     futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
+    loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} recruits"))
 } else {
+    loginfo(glue("Did not have any recruits to find expanded info for, returning empty dataframe"))
     futurecasts <- data.frame()
 }
 
