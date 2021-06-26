@@ -20,7 +20,7 @@ jobs:
             uses: ./ # Uses an action in the root directory
             with:
               target-school: 'Georgia Tech'
-              target-year: 2022
+              target-year: "2022"
           - name: Update last_updated
             uses: kludex/update-file@0.6.1
             with:
