@@ -31,5 +31,5 @@ jobs:
             with:
               file-path: ./last_updated.json
               commit-msg: "Updated last_updated.json date after latest bot run."
-              github_token: ${{ secrets.GITHUB_TOKEN }}
+              github-token: ${{ secrets.GITHUB_TOKEN }}
 
