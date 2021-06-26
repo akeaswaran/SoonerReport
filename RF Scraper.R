@@ -165,7 +165,7 @@ player_slim_list <- futurecasts %>%
 total <- nrow(player_slim_list)
 
 if (total > 0) {
-    loginfo(glue("Retrieving expanded info from Rivals API for {nrow(futurecasts)} recruits"))
+    loginfo(glue("Retrieving expanded info from Rivals API for {nrow(futurecasts)} FutureCasts"))
     for (row in 1:total) {
         player_id <- player_slim_list[row, "player_id"]
         name  <- trim(player_slim_list[row, "recruit"])
@@ -187,9 +187,9 @@ if (total > 0) {
     }
 
     futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
-    loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} recruits"))
+    loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} FutureCasts"))
 } else {
-    loginfo(glue("Did not have any recruits to find expanded info for, returning empty dataframe"))
+    loginfo(glue("Did not have any FutureCasts to find expanded info for, returning empty dataframe"))
     futurecasts <- data.frame()
 }
 
