@@ -29,7 +29,7 @@ jobs:
           - name: Push last_updated file
             uses: test-room-7/action-update-file@v1.5.0
             with:
-              file-path: ./last_updated.json
+              file-path: last_updated.json
               commit-msg: "Updated last_updated.json date after latest bot run."
               github-token: ${{ secrets.GITHUB_TOKEN }}
 
