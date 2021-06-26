@@ -14,5 +14,5 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   env:
-    - TARGET_YEAR=${{ inputs.target-year }}
-    - TARGET_SCHOOL=${{ inputs.target-school }}
+    TARGET_YEAR: ${{ inputs.target-year }}
+    TARGET_SCHOOL: ${{ inputs.target-school }}
