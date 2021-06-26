@@ -10,12 +10,15 @@ To build, clone the repo and:
 docker build . -t soonerreport:main
 ```
 
-and then to run:
+and then to run like it would in GitHub Actions:
 
 ```
-docker run --env TARGET_SCHOOL='Georgia Tech' --env TARGET_YEAR=2022 soonerreport:main
+docker run -e INPUT_TARGET-SCHOOL='Georgia Tech' --env INPUT_TARGET-YEAR=2022 soonerreport:main
 ```
 
+Bot variables are configurable in `.github/workflows/main.yml`.
+
+---
 
 _Original README from Steven Plaisance as follows_
 

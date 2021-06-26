@@ -4,9 +4,9 @@ library(stringr)
 library(lubridate)
 
 # Configurable environment variables
-selected_school <- Sys.getenv("TARGET_SCHOOL")
+selected_school <- Sys.getenv("INPUT_TARGET-SCHOOL")
 selected_school <- ifelse(is.na(selected_school) || str_length(selected_school) == 0, "Georgia Tech", selected_school)
-target_year <- Sys.getenv("TARGET_YEAR")
+target_year <- Sys.getenv("INPUT_TARGET-YEAR")
 target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, 2022, target_year)
 
 last_updated <- tryCatch(
@@ -104,7 +104,4 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
 #            channel="#gtrecruiting",
 #            icon_emoji="")
 
-write(paste(
-    "{  \"date\": \"",now,"\" }"
-), "./last_updated.json")
 

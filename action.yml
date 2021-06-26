@@ -1,0 +1,18 @@
+# action.yml
+name: 'SoonerReport'
+description: 'Automated recruiting updates from 247Sports and Rivals.'
+inputs:
+  target-year:
+    description: 'Which year to query for.'
+    required: true
+    default: '2022'
+  target-school:
+    description: 'Which school to query for.'
+    required: true
+    default: 'Georgia Tech'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.target-year }}
+    - ${{ inputs.target-school }}

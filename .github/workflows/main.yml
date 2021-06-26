@@ -1,0 +1,28 @@
+name: Scheduled Bot
+on:
+  push:
+    branches:
+      - main
+  # schedule:
+  #   - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+    SoonerReport:
+        runs-on: ubuntu-latest
+        name: Pulling latest recruit predictions
+        steps:
+          # To use this repository's private action,
+          # you must check out the repository
+          - name: Checkout
+            uses: actions/checkout@v2
+          - name: Pull recruit reports
+            uses: ./ # Uses an action in the root directory
+            with:
+              target-school: 'Georgia Tech'
+              target-year: 2022
+          - name: Update last_updated
+            uses: kludex/update-file
+            with:
+              script_file: update_latest.py
+              update_file: last_updated.json
