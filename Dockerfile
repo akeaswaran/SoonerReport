@@ -13,4 +13,4 @@ RUN install2.r --error \
 
 COPY . .
 
-CMD ["Rscript", "slack.R"]
+CMD ["Rscript", "services.R"]

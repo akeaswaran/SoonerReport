@@ -5,54 +5,24 @@ library(lubridate)
 library(logging)
 basicConfig()
 
-# Configurable environment variables
-selected_school <- Sys.getenv("TARGET_SCHOOL")
-selected_school <- ifelse(is.na(selected_school) || str_length(selected_school) == 0, "Georgia Tech", selected_school)
-target_year <- Sys.getenv("TARGET_YEAR")
-target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, 2022, target_year)
-slack_enabled <- Sys.getenv("SLACK_ENABLED")
-slack_enabled <- !(is.na(slack_enabled) || str_length(slack_enabled) == 0 || tolower(as.character(slack_enabled)) == "false" || slack_enabled == FALSE)
-
-last_updated <- tryCatch(
-    {
-        tmp <- read_json("last_updated.json")$date
-        tmp <- trim(tmp)
-        ymd_hms(tmp, tz = "UTC")
-    },
-    error = function(cond) {
-        loginfo("No last_updated file found, using current date")
-        now()
-    }
-)
-loginfo(glue("Last updated recruits at: {last_updated}"))
-
-if (slack_enabled) {
-    if (!file.exists("./config.dcf")) {
-        loginfo("No config file found, using environment variables to create one")
-        create_config_file(
-            filename = "./config.dcf",
-            bot_user_oauth_token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
-            incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
-            username = Sys.getenv("SLACK_USERNAME"),
-            channel = Sys.getenv("SLACK_CHANNEL")
-        )
-    }
-    slackr_setup(
-        config_file = "./config.dcf"
+if (!file.exists("./config.dcf")) {
+    loginfo("No config file found, using environment variables to create one")
+    create_config_file(
+        filename = "./config.dcf",
+        bot_user_oauth_token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
+        incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
+        username = Sys.getenv("SLACK_USERNAME"),
+        channel = Sys.getenv("SLACK_CHANNEL")
     )
-} else {
-    loginfo("Slack support disabled, messages will not be sent.")
 }
+slackr_setup(
+    config_file = "./config.dcf"
+)
 
 slack_send <- function(msg) {
     loginfo(glue("Sending message: {msg}"))
-    if (slack_enabled) {
-        slackr_msg(msg)
-    }
+    slackr_msg(msg)
 }
-
-source("./RF Scraper.R") # Rivals scraper
-source("./CB Scraper Run.R")  # 247 scraper
 
 # ----- Data from Rivals -----
 if (exists("futurecasts") && nrow(futurecasts) > 0) {
@@ -130,7 +100,5 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
     slack_send(glue("No recent 247 Crystal Balls found for {selected_school} class of {target_year} since {last_updated}"))
 }
 
-if (slack_enabled) {
-    loginfo("Tearing down Slack integration after use")
-    slackr_teardown()
-}
+loginfo("Tearing down Slack integration after use")
+slackr_teardown()
