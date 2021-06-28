@@ -50,7 +50,8 @@ for(i in 0:49){
 loginfo(glue("Converted CBs into {nrow(player_info)} player info records..."))
 
 player_info <- player_info %>% slice(2:51)
-player_info$number <- 1:50
+player_info$number <- 1:nrow(player_info)
+loginfo(glue("Assigned ids to {nrow(player_info)} records..."))
 
 images <- data.frame(names = image_names, height = image_height)
 teams <- images %>% dplyr::filter(height == 24)
@@ -69,9 +70,11 @@ if(length(emptys!=0)) {
   teams <- bind_rows(teams, cut)
   new_row <- data.frame(names = "icon-zero", height = as.factor(24), number = emptys)
   teams <- bind_rows(teams, new_row)
-} else{teams$number <- 1:50}
+} else{
+  teams$number <- 1:nrow(teams)
+}
 pred_date <- as.data.frame(pred_date)
-pred_date$number = 1:50
+pred_date$number = 1:nrow(pred_date)
 teams <- left_join(teams, pred_date, by="number")
 
 loginfo(glue("Found {nrow(teams)} teams in dataset"))
@@ -81,7 +84,7 @@ sep <- targets %>% separate(col = link, into = c("prefix", "body"), sep = 8)
 sep <- sep %>% separate(col = "body", into = c("site", "body"), sep = 9)
 sep <- sep %>% separate(col = "body", into = c("suffix", "body"), sep = 5)
 sep <- sep %>% separate(col = "body", into = c("type", "body"), sep = 6)
-targets <- targets %>% mutate(site = sep$site, type = sep$type) %>% filter(type == "Player") %>% mutate(number = 1:50)
+targets <- targets %>% mutate(site = sep$site, type = sep$type) %>% filter(type == "Player") %>% mutate(number = 1:nrow(.))
 
 new_names <- data.frame(name = player_info$name)
 sep <- new_names %>% separate(col = name, into = c("A", "B", "C", "D", "E"), sep = "                ")
@@ -120,7 +123,7 @@ cb_list <- cb_list %>% mutate(elapsed = as.double(difftime(pred_date,
                                                            units = "secs")))
 cb_list <- left_join(cb_list, player_info, by="number")
 predictor_info <- data.frame(predictor = predictor_names, acc = p_stats)
-predictor_info$number <- 1:50
+predictor_info$number <- 1:nrow(predictor_info)
 predictor_info$confidence <- confidence
 cb_list <- left_join(cb_list, predictor_info, by="number")
 
