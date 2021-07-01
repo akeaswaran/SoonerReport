@@ -2,6 +2,7 @@ library(glue)
 library(stringr)
 library(lubridate)
 library(logging)
+library(jsonlite)
 basicConfig()
 
 # Configurable environment variables
@@ -12,12 +13,14 @@ target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, 2022, 
 
 last_updated <- tryCatch(
     {
-        tmp <- read_json("last_updated.json")$date
+        tmp <- read_json("./last_updated.json")$date
         tmp <- trim(tmp)
+        loginfo("Found last_updated file, using old date for comparison")
         ymd_hms(tmp, tz = "UTC")
     },
     error = function(cond) {
         loginfo("No last_updated file found, using current date")
+        logerror(glue::glue("Error shown: {cond}"))
         now()
     }
 )
