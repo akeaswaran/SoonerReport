@@ -12,16 +12,16 @@ jobs:
           - name: Checkout
             uses: actions/checkout@v2
           - name: Pull recruit reports and post to Slack
-            uses: ./
-            with:
-               target_school: 'Georgia Tech'
-               target_year: "2022"
-               slack_enabled: true
-               slack_channel: ${{ secrets.SLACK_CHANNEL }}
-               slack_username: ${{ secrets.SLACK_USERNAME }}
-               slack_bot_user_oauth_token: ${{ secrets.SLACK_BOT_USER_OAUTH_TOKEN }}
-               slack_incoming_webhook_url: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
-               slack_send_empty_updates: false
+            uses: docker://ghcr.io/akeaswaran/soonerreport:latest
+            env:
+              TARGET_YEAR: 'Georgia Tech'
+              TARGET_SCHOOL: "2022"
+              SLACK_ENABLED: true
+              SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.SLACK_BOT_USER_OAUTH_TOKEN }}
+              SLACK_INCOMING_URL_PREFIX: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
+              SLACK_USERNAME: ${{ secrets.SLACK_USERNAME }}
+              SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+              SLACK_SEND_EMPTY_UPDATES: false
           - name: Update last_updated date file
             run: python ./update_latest.py
           - name: Push last_updated file
