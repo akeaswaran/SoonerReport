@@ -50,22 +50,23 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
 
         pred <- new_cbs %>% slice(i)
 
-        name <- pred$name
+        name <- trim(pred$name)
         link <- as.character(pred$link)
-        pos <- pred$pos
-        rank <- pred$star
-        ht <- pred$ht
-        wt <- pred$wt
-        predictor <- pred$predictor
-        acc <- pred$acc
-        star <- pred$star
-        confidence <- pred$confidence
+        pos <- trim(pred$pos)
+        rank <- trim(pred$star)
+        ht <- trim(pred$ht)
+        wt <- trim(pred$wt)
+        predictor <- trim(pred$predictor)
+        acc <- trim(pred$acc)
+        star <- trim(pred$star)
+        confidence <- trim(pred$confidence)
 
         player_page <- read_html(link) %>% html_nodes(".upper-cards") %>% html_nodes(".details") %>%
             html_nodes("li") %>% html_nodes("span") %>% html_text()
         hs <- player_page[2]
         hs <- gsub("\n                            ","",hs)
         hs <- gsub("\n                        ","",hs)
+        hs <- trim(hs)
         hometowm <- data.frame(state = player_page[4])
         sep <- hometowm %>% separate(col = state, into = c("Town", "State"), sep = ", ")
         state <- sep$State
@@ -74,7 +75,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
                 "
             \U0001f6A8 New Crystal Ball for {selected_school}
 
-            {target_year} {pos}{name}
+            {target_year} {pos} {name}
             {ht} / {wt}
             {{hs} ({state})
 
@@ -88,7 +89,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
                 "
                 \U0001f6A8 New Crystal Ball for {selected_school}
 
-                {target_year} {star} {pos}{name}
+                {target_year} {star} {pos} {name}
                 {ht} / {wt}
                 {hs} ({state})
 
