@@ -14,8 +14,8 @@ jobs:
           - name: Pull recruit reports and post to Slack
             uses: docker://ghcr.io/akeaswaran/soonerreport:latest
             env:
-              TARGET_YEAR: 'Georgia Tech'
-              TARGET_SCHOOL: "2022"
+              TARGET_YEAR: "2022"
+              TARGET_SCHOOL: 'Georgia Tech'
               SLACK_ENABLED: true
               SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.SLACK_BOT_USER_OAUTH_TOKEN }}
               SLACK_INCOMING_URL_PREFIX: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
