@@ -14,7 +14,9 @@ jobs:
       - name: Set repo name as lowercase
         run: |
             BASE_REPO_NAME=${{ github.repository }}
-            echo REPOSITORY_NAME="${BASE_REPO_NAME,,}" >> $GITHUB_ENV
+            USER_NAME=${{ github.repository_owner }}
+            echo LOWER_CASE_NAME="${BASE_REPO_NAME,,}"
+            echo REPOSITORY_NAME="${LOWER_CASE_NAME//$USER_NAME}"  >> $GITHUB_ENV
       - name: Build and Push Docker Image
         uses:  mr-smithers-excellent/docker-build-push@v5.5
         with:
@@ -22,6 +24,5 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
-          push: true # Will only build if this is not here
           tags: |
             latest
