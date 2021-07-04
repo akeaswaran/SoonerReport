@@ -26,6 +26,8 @@ last_updated <- tryCatch(
 )
 loginfo(glue("Last updated recruits at: {last_updated}"))
 
+httr::user_agent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:85.0) Gecko/20100101 Firefox/85.0")
+
 ## -- ACTUAL DATA SCRAPING --
 source("./RF Scraper.R") # Rivals scraper
 source("./CB Scraper Run.R")  # 247 scraper
