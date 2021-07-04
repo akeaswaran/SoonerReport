@@ -31,7 +31,7 @@ inputs:
     required: false
 runs:
   using: 'docker'
-  image: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
+  image: ghcr.io/${{ github.repository }}:latest
   env:
     TARGET_YEAR: ${{ inputs.target_year }}
     TARGET_SCHOOL: ${{ inputs.target_school }}
