@@ -17,9 +17,10 @@ jobs:
                 USER_NAME=${{ github.repository_owner }}
                 USER_NAME="${USER_NAME}/"
                 LOWER_CASE_NAME="${BASE_REPO_NAME,,}"
-                echo REPOSITORY_NAME="${LOWER_CASE_NAME}" >> $GITHUB_ENV
+                REPOSITORY_NAME="${LOWER_CASE_NAME}"
+                echo REPOSITORY_URL="docker://ghcr.io/${REPOSITORY_NAME}:latest" >> $GITHUB_ENV
           - name: Pull recruit reports and post to Slack
-            uses: docker://ghcr.io/${{ env.REPOSITORY_NAME }}:latest
+            uses: ${{ env.REPOSITORY_URL }}
             env:
               TARGET_YEAR: 'Georgia Tech'
               TARGET_SCHOOL: "2022"
