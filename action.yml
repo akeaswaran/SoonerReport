@@ -26,6 +26,9 @@ inputs:
   slack_incoming_webhook_url:
     description: "Slack Webhook to use for the bot. Head to api.slack.com for more details."
     required: false
+  slack_send_empty_updates:
+    description: "If you want to send updates to slack when there aren't any new recruits to post about."
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
@@ -37,3 +40,4 @@ runs:
     SLACK_INCOMING_URL_PREFIX: ${{ inputs.slack_incoming_webhook_url }}
     SLACK_USERNAME: ${{ inputs.slack_username }}
     SLACK_CHANNEL: ${{ inputs.slack_channel }}
+    SLACK_SEND_EMPTY_UPDATES: ${{ inputs.slack_send_empty_updates }}

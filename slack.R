@@ -35,7 +35,9 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
     }
 } else {
     loginfo("No futurecasts to send messages for")
-    slack_send(glue("No recent Rivals FutureCasts found for {selected_school} class of {target_year} since {last_updated}"))
+    if (send_empty_updates) {
+        slack_send(glue("No recent Rivals FutureCasts found for {selected_school} class of {target_year} since {last_updated}"))
+    }
 }
 
 # ----- Data from 247 -----
@@ -97,7 +99,9 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
     }
 } else {
     loginfo("No Crystal Balls to send messages for")
-    slack_send(glue("No recent 247 Crystal Balls found for {selected_school} class of {target_year} since {last_updated}"))
+    if (send_empty_updates) {
+        slack_send(glue("No recent 247 Crystal Balls found for {selected_school} class of {target_year} since {last_updated}"))
+    }
 }
 
 loginfo("Tearing down Slack integration after use")
