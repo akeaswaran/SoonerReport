@@ -29,9 +29,9 @@ If you're just interested in getting notifications and not building services, th
 2. Follow the steps from the [Service Documentation](#service-documentation) section for each service you want to post updates to.
 3. (You should have done this already, but for completion's sake:) Configure any secrets and environment variables you may need for your enabled at `<your fork's root URL>/settings/environments`. **DO NOT CHECK TOKENS/SECRETS INTO SOURCE.**
 4. Make sure your service's input variables are properly configured for the `Pull recruit reports and post to Slack` step in `.github/workflows/main.yml`.
-    - Make sure that for each service you want to post to that the `<SERVICE>_ENABLED` variable is set to `true`.
-    - Make sure the `uses` attribute points to your fork of the repo.
-5. Commit the changes you've made to `.github/workflows/main.yml`, then push them.
+    - Make sure that for each service you want to post to that the `SERVICE_ENABLED` variable is set to `true`.
+    - Make sure the `image` attribute of the `runs` metadata section of `.github/actions/action.yml` points to your fork of the repo.
+5. Commit the changes you've made to `.github/workflows/main.yml` and `.github/actions/action.yml`, then push them.
 6. Head to the Actions tab in GitHub, and wait for your new Docker image to build and be pushed to the GitHub Container Registry.
 7. Run the `SoonerReport Scheduled Run` workflow from the Actions tab in GitHub, or wait for a scheduled run (default schedule is every six hours).
 
@@ -58,8 +58,9 @@ Want to add a new service to output notifications to? Follow these steps:
     - Follow the given Slack example for this.
     - Make sure to replace the path to `slack.R` with a path to your service's file.
 4. Add any dependencies you need to for your service to the list in the Dockerfile. Make sure to use `\` to put each new dependency on its own line, like the existing ones.
-5. Update `main.yml` with any customizable input variables you must configure for your service, including your `SERVICE_ENABLED` boolean from step 3.
-    - Follow the Slack stuff as an example and make the boolean the only required variable of the lot.
+5. Update `.github/workflows/main.yml` and `.github/actions/action.yml` with any customizable input variables you must configure for your service, including your `SERVICE_ENABLED` boolean from step 3.
+    - Follow the Slack stuff as an example.
+    - In `.github/actions/action.yml`, make `SERVICE_ENABLED` the boolean the only required variable of the lot.
 6. Update README.md with documentation on how to configure necessary environment variables for your service.
     - Follow the Slack section as an example.
     
@@ -73,7 +74,7 @@ To deploy your new service, follow steps 3-7 in the [Using this tool](#using-thi
 
 Note: Posting to Slack will fail until you configure the right environment variables in your GitHub repo's Secrets. To set these up and enable Slack posting:
 
-1. Go to `.github/workflows/main.yml` and check what lines follow the `${{ secrets.<identifier> }}` pattern. Make note of the identifiers used, but ignore any uses of `GITHUB_TOKEN`, which is internal use only.
+1. Go to `.github/actions/action.yml` and check what variables require secrets. You can also look at `.github/workflows/main.yml` to view an example on how to configure the variables.
 2. Configure relevant values for said identifiers at `<your fork's root URL>/settings/environments`. **DO NOT CHECK TOKENS/SECRETS INTO SOURCE.**
 3. Make sure to set `SLACK_ENABLED` to `true` in `.github/workflows/main.yml` or as a local environment variable (if running locally).
 
