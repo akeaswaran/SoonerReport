@@ -17,8 +17,7 @@ jobs:
             USER_NAME=${{ github.repository_owner }}
             USER_NAME="${USER_NAME}/"
             LOWER_CASE_NAME="${BASE_REPO_NAME,,}"
-            REPOSITORY_NAME="${LOWER_CASE_NAME//$USER_NAME}"
-            echo ${REPOSITORY_NAME} >> $GITHUB_ENV
+            echo REPOSITORY_NAME="${LOWER_CASE_NAME//$USER_NAME}" >> $GITHUB_ENV
       - name: Build and Push Docker Image
         uses:  mr-smithers-excellent/docker-build-push@v5.5
         with:
