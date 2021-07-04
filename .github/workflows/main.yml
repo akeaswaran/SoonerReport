@@ -12,7 +12,7 @@ jobs:
           - name: Checkout
             uses: actions/checkout@v2
           - name: Pull recruit reports and post to Slack
-            uses: .github/actions/action.yml
+            uses: ./.github/actions/action.yml
             with:
                target_school: 'Georgia Tech'
                target_year: "2022"
