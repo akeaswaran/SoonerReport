@@ -5,22 +5,14 @@ on:
   workflow_dispatch:
 
 jobs:
-    SoonerReport:
+    reporter:
         runs-on: ubuntu-latest
-        name: Pulling latest recruit predictions
+        name: Posting latest recruit predictions
         steps:
           - name: Checkout
             uses: actions/checkout@v2
-          - name: Set repo name as lowercase
-            run: |
-                BASE_REPO_NAME=${{ github.repository }}
-                USER_NAME=${{ github.repository_owner }}
-                USER_NAME="${USER_NAME}/"
-                LOWER_CASE_NAME="${BASE_REPO_NAME,,}"
-                REPOSITORY_NAME="${LOWER_CASE_NAME}"
-                echo REPOSITORY_URL="docker://ghcr.io/${REPOSITORY_NAME}:latest" >> $GITHUB_ENV
           - name: Pull recruit reports and post to Slack
-            uses: ${{ env.REPOSITORY_URL }}
+            uses: docker://ghcr.io/akeaswaran/soonerreport:latest
             env:
               TARGET_YEAR: 'Georgia Tech'
               TARGET_SCHOOL: "2022"
