@@ -30,16 +30,16 @@ Want to add a new service to output notifications to? Follow these steps:
     - Follow the given Slack example for this.
     - Make sure to replace the path to `slack.R` with a path to your service's file.
 4. Add any dependencies you need to for your service to the list in the Dockerfile. Make sure to use `\` to put each new dependency on its own line, like the existing ones.
-5. Update `action.yml` with any customizable input variables you must configure for your service, including your `SERVICE_ENABLED` boolean from step 3.
+5. Update `main.yml` with any customizable input variables you must configure for your service, including your `SERVICE_ENABLED` boolean from step 3.
     - Follow the Slack stuff as an example and make the boolean the only required variable of the lot.
 
 To use your new service:
 
 1. Configure any secret environment variable you may need for your service at `<your fork's root URL>/settings/environments`. **DO NOT CHECK TOKENS/SECRETS INTO SOURCE.**
-2. Configure your service's input variables for the SoonerReport step in `.github/workflows/main.yml`.
+2. Make sure your service's input variables are properly configured for the SoonerReport step in `.github/workflows/main.yml`.
     - Make sure your `SERVICE_ENABLED` variable is set to `true`.
 3. Commit and push your changes.
-3. Run your workflow from the Actions tab in GitHub.
+3. Run your workflow from the Actions tab in GitHub, or wait for a scheduled run (default schedule is every six hours).
 
 ## Service Documentation
 
