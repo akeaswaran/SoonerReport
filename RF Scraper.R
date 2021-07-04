@@ -8,7 +8,7 @@ library(stringr)
 library(logging)
 basicConfig()
 
-loginfo("Starting Rivals FutureCast scraping...")
+loginfo("Starting Rivals National FutureCast scraping...")
 
 trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t|\\t$", "", x))
 column <- function(x, css) x %>% html_node(css = css) %>% html_text()

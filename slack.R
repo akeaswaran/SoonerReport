@@ -41,9 +41,9 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 # ----- Data from 247 -----
 if (exists("new_cbs") && nrow(new_cbs) > 0) {
     loginfo("Iterating through Crystal Balls and sending messages...")
-    for(i in 1:nrow(new_pred)){
+    for(i in 1:nrow(new_cbs)){
 
-        pred <- new_pred %>% slice(i)
+        pred <- new_cbs %>% slice(i)
 
         name <- pred$name
         link <- as.character(pred$link)
