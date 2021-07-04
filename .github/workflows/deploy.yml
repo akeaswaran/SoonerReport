@@ -15,6 +15,7 @@ jobs:
         run: |
             BASE_REPO_NAME=${{ github.repository }}
             USER_NAME=${{ github.repository_owner }}
+            USER_NAME="${USER_NAME}/"
             LOWER_CASE_NAME="${BASE_REPO_NAME,,}"
             REPOSITORY_NAME="${LOWER_CASE_NAME//$USER_NAME}"
             echo ${REPOSITORY_NAME} >> $GITHUB_ENV
