@@ -24,7 +24,8 @@ Input variables are configurable in `.github/workflows/main.yml`.
 
 If you're just interested in getting notifications and not building services, then follow these steps:
 
-1. Fork this repo.
+1. Fork this repo, or create an empty one.
+    - If you created an empty repo, make sure you copy over `.github/workflows/main.yml` and mimic the folder structure.
 2. Follow the steps from the [Service Documentation](#service-documentation) section for each service you want to post updates to.
 3. (You should have done this already, but for completion's sake:) Configure any secrets and environment variables you may need for your enabled at `<your fork's root URL>/settings/environments`. **DO NOT CHECK TOKENS/SECRETS INTO SOURCE.**
 4. Make sure your service's input variables are properly configured for the `Pull recruit reports and post to Slack` step in `.github/workflows/main.yml`.
