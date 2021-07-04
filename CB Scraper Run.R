@@ -3,11 +3,19 @@ library(tidyverse)
 library(lubridate)
 library(glue)
 library(logging)
+library(httr)
 basicConfig()
 
 loginfo(glue("Starting 247 Crystal Ball scraping for target year {target_year}..."))
 
-year_url <- glue("https://247sports.com/Season/{target_year}-Football/TargetPredictions/")
+year_url <- paste0("https://247sports.com/Season/",target_year,"-Football/TargetPredictions/")
+
+# check connection
+test_result <- GET(url = year_url)
+loginfo(glue("GET Result test status code: {test_result$status_code}"))
+
+loginfo(glue("Scraping 247 URL at {year_url}"))
+
 cb <- read_html(year_url)
 
 span <- cb %>%
