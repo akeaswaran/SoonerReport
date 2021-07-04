@@ -5,6 +5,9 @@ library(lubridate)
 library(logging)
 basicConfig()
 
+send_empty_updates <- Sys.getenv("SLACK_SEND_EMPTY_UPDATES")
+send_empty_updates <- !(is.na(send_empty_updates) || str_length(send_empty_updates) == 0 || tolower(as.character(send_empty_updates)) == "false" || send_empty_updates == FALSE)
+
 if (!file.exists("./config.dcf")) {
     loginfo("No config file found, using environment variables to create one")
     create_config_file(
