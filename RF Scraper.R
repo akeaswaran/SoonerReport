@@ -99,7 +99,8 @@ futurecasts <- futurecasts %>%
         forecasted_team = sub("\\.","", forecasted_team),
         elapsed = as.double(difftime(date,
                                      last_updated,
-                                     units = "secs"))
+                                     units = "secs")),
+        year = as.numeric(year)
     ) %>%
     filter(
         (grepl(selected_school, forecasted_team) == TRUE) &
@@ -159,6 +160,9 @@ query_croots <- function(name, year) {
 get_croot_info <- function(name, player_id, year) {
     result <- query_croots(name, year)
     result <- result %>%
+        mutate(
+            year = as.numeric(year)
+        ) %>%
         filter(
             as.numeric(prospect_id) == as.numeric(player_id)
         ) %>%
