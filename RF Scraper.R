@@ -10,10 +10,17 @@ basicConfig()
 
 loginfo("Starting Rivals National FutureCast scraping...")
 
-trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t|\\t$", "", x))
+trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t*|\\t*$", "", x))
 column <- function(x, css) x %>% html_node(css = css) %>% html_text()
 
-# splitJoin <- function(x) strsplit(x, split="\\s") %>% trim() %>% .[lapply(., length) > 0] %>% unlist() %>% paste()
+splitJoin <- function(input) {
+    tmp <- as.list(strsplit(as.character(input), split="\\s")[[1]]) %>%
+        trim() %>%
+        map(., ~ discard(.x, ~ nchar(.x) == 0)) %>%
+        compact() %>%
+        paste(sep=" ", collapse=" ")
+    return(tmp)
+}
 
 rf_html <- read_html("https://n.rivals.com/futurecast")
 
@@ -67,7 +74,7 @@ now <- now(tz = "UTC")
 futurecasts <- futurecasts %>%
     mutate(
         forecaster = trim(forecaster),
-        recruit = trim(recruit),
+        recruit = sapply(recruit, splitJoin),
         time_since = gsub(" ago", "", time_since),
         unit_elapsed = case_when(
             grepl("s", time_since) == TRUE ~ "second",
@@ -168,7 +175,7 @@ if (total > 0) {
     loginfo(glue("Retrieving expanded info from Rivals API for {nrow(futurecasts)} FutureCasts"))
     for (row in 1:total) {
         player_id <- player_slim_list[row, "player_id"]
-        name  <- trim(player_slim_list[row, "recruit"])
+        name <- player_slim_list[row, "recruit"]
         year  <- player_slim_list[row, "year"]
 
         tryCatch(
@@ -185,6 +192,11 @@ if (total > 0) {
             }
         )
     }
+
+    expanded_data <- expanded_data %>%
+        mutate(
+            year = as.numeric(year)
+        )
 
     futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
     loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} FutureCasts"))
