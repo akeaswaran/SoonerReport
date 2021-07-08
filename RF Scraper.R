@@ -68,7 +68,7 @@ futurecasts <- data.frame(
 )
 
 loginfo(glue("Found {nrow(futurecasts)} recruit futurecast rows,."))
-loginfo(glue("Cleaning and filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
+loginfo(glue("Cleaning data to properly format dates..."))
 
 now <- now(tz = "UTC")
 futurecasts <- futurecasts %>%
@@ -102,14 +102,9 @@ futurecasts <- futurecasts %>%
                                      units = "secs")),
         year = as.numeric(year)
     ) %>%
-    filter(
-        (grepl(selected_school, forecasted_team) == TRUE) &
-        (elapsed >= 0) &
-        (as.numeric(year) == as.numeric(target_year))
-    ) %>%
     select(-time_since, -unit_elapsed, -value_elapsed)
 
-loginfo(glue("Found {nrow(futurecasts)} FutureCasts that match criteria"))
+
 
 # https://github.com/SometimesY/CrootBot/blob/master/getRivals.py
 strip_suffix <- function(name) {
@@ -186,7 +181,24 @@ if (total > 0) {
             {
                 loginfo(glue("Starting loading {row}/{total}: {name} (ID: {player_id}, Year: {year})"))
                 result <- get_croot_info(name, player_id, year)
-                expanded_data <- rbind(expanded_data, result)
+                if (nrow(result) > 0) {
+                    colleges_interested_str = ""
+                    if (length(result$prospect_colleges) > 0 && !is.na(result$prospect_colleges)) {
+                        colleges_interested_tmp = result$prospect_colleges[[1]]
+                        if (nrow(colleges_interested_tmp) > 0) {
+                            colleges_interested_str = paste(colleges_interested_tmp$college_common_name, collapse=', ')
+                        } else {
+                            colleges_interested_str = ""
+                        }
+                    } else {
+                        colleges_interested_str = ""
+                    }
+
+                    result$colleges_interested <- c(colleges_interested_str)
+                    expanded_data <- rbind(expanded_data, result %>% select(-prospect_colleges))
+                } else {
+                    loginfo(glue("Did not find Rivals API data for {name} (ID: {player_id}, Year: {year})"))
+                }
             },
             error = function(cond) {
                 logwarn(paste("Error: ", cond))
@@ -203,12 +215,18 @@ if (total > 0) {
         )
 
     futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
-    loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} FutureCasts"))
+    loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} total FutureCasts"))
+
+    loginfo(glue("Filtering {nrow(futurecasts)} total FutureCasts based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})"))
+    futurecasts <- futurecasts %>%
+        filter(
+            (grepl(selected_school, forecasted_team) == TRUE) &
+            (elapsed >= 0) &
+            (as.numeric(year) == as.numeric(target_year)) &
+            (grepl(selected_school, colleges_interested) == TRUE)
+        )
+    loginfo(glue("Found {nrow(futurecasts)} FutureCasts that match criteria, sending to posting services"))
 } else {
-    loginfo(glue("Did not have any FutureCasts to find expanded info for, returning empty dataframe"))
+    loginfo(glue("Did not have any FutureCasts to find expanded info for, returning empty dataframe to posting services"))
     futurecasts <- data.frame()
 }
-
-
-
-
