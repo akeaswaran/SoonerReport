@@ -31,10 +31,54 @@ slack_send <- function(msg) {
 if (exists("futurecasts") && nrow(futurecasts) > 0) {
     loginfo("Iterating through futurecasts and sending messages...")
     for (row in 1:nrow(futurecasts)) {
-        player_id <- futurecasts[row, "player_id"]
+        link <- futurecasts[row, "profile_url"]
+
+        player_profile <- read_html(link)
+
+        player_hs <- player_profile %>% html_nodes("div.new-prospect-profile >
+                                               div.prospect-personal-information >
+                                               div.location-block >
+                                               div.right-personal-information >
+                                               a > .prospect-small-information >
+                                               .vital-line-location") %>% html_text()
+
         name  <- trim(futurecasts[row, "recruit"])
         year  <- futurecasts[row, "year"]
-        slack_send(glue("Found recent Rivals FutureCast for {selected_school}: {name} (ID: {player_id}, Year: {year})"))
+        pos <- futurecasts[row, "position_abbreviation"]
+        rank <- futurecasts[row, "stars"]
+        ht <- fixHeight(futurecasts[row, "height"])
+        wt <- futurecasts[row, "weight"]
+        predictor <- futurecasts[row, "forecaster"]
+        acc <- futurecasts[row, "accuracy"]
+        hs <- player_hs[2]
+        hometown <- futurecasts[row, "hometown"]
+        og_school <- futurecasts[row, "original_school"]
+        new_school <- futurecasts[row, "forecasted_team"]
+        is_update <- futurecasts[row, "update"]
+
+        if (is_update == 1) {
+            slack_send(glue("
+            \U000F16A8 {selected_school} FutureCast
+
+            {predictor} ({acc}%) updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
+
+            {ht} / {wt}
+            {hs} ({hometown})
+            {link}
+            "))
+        } else {
+            slack_send(glue("
+            \U0001F52E New {selected_school} FutureCast
+
+            {year} {rank}-Star {pos} {name}
+            {ht} / {wt}
+            {hs} ({hometown})
+
+            By: {predictor} ({acc}%)
+
+            {link}
+            "))
+        }
     }
 } else {
     loginfo("No futurecasts to send messages for")
