@@ -12,7 +12,7 @@ if (!file.exists("./config.dcf")) {
     loginfo("No config file found, using environment variables to create one")
     create_config_file(
         filename = "./config.dcf",
-        bot_user_oauth_token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
+        token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
         incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
         username = Sys.getenv("SLACK_USERNAME"),
         channel = Sys.getenv("SLACK_CHANNEL")
