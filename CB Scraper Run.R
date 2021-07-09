@@ -10,10 +10,10 @@ loginfo(glue("Starting 247 Crystal Ball scraping for target year {target_year}..
 
 year_url <- paste0("https://247sports.com/Season/",target_year,"-Football/TargetPredictions/")
 
-# check connection
-test_result <- GET(url = year_url)
-loginfo(glue("GET Result test status code: {test_result$status_code}"))
-loginfo(glue("any http errors? {http_error(test_result)}"))
+# # check connection
+# test_result <- GET(url = year_url)
+# loginfo(glue("GET Result test status code: {test_result$status_code}"))
+# loginfo(glue("any http errors? {http_error(test_result)}"))
 
 loginfo(glue("Scraping 247 URL at {year_url}"))
 

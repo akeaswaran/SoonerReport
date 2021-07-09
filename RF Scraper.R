@@ -10,18 +10,6 @@ basicConfig()
 
 loginfo("Starting Rivals National FutureCast scraping...")
 
-trim <- function (x) gsub("^\\s+|\\s+$", "", gsub("^\\t*|\\t*$", "", x))
-column <- function(x, css) x %>% html_node(css = css) %>% html_text()
-
-splitJoin <- function(input) {
-    tmp <- as.list(strsplit(as.character(input), split="\\s")[[1]]) %>%
-        trim() %>%
-        map(., ~ discard(.x, ~ nchar(.x) == 0)) %>%
-        compact() %>%
-        paste(sep=" ", collapse=" ")
-    return(tmp)
-}
-
 rf_html <- read_html("https://n.rivals.com/futurecast")
 
 # ----- FutureCast Forecasters -----
@@ -100,28 +88,11 @@ futurecasts <- futurecasts %>%
         elapsed = as.double(difftime(date,
                                      last_updated,
                                      units = "secs")),
-        year = as.numeric(year)
+        year = as.numeric(year),
+        update = if_else(grepl("updates", full_text, fixed = T), 1, 0),
+        original_school = if_else(update == 0, "None", str_extract(full_text, "(?<=from\\s)\\w+"))
     ) %>%
     select(-time_since, -unit_elapsed, -value_elapsed)
-
-
-
-# https://github.com/SometimesY/CrootBot/blob/master/getRivals.py
-strip_suffix <- function(name) {
-    name <- trim(name)
-    result <- case_when(
-        grepl(' Jr$', name) ~ gsub("Jr","", name),
-        grepl(' Jr\\.$', name) ~ gsub("Jr.","", name),
-        grepl(' II$', name) ~ gsub("II","", name),
-        grepl(' III$', name) ~ gsub("III","", name),
-        grepl(' IV$', name) ~ gsub("IV","", name),
-        grepl(' V$', name) ~ gsub("V","", name),
-        grepl(' VI$', name) ~ gsub("VI","", name),
-        grepl(' VII$', name) ~ gsub("VII","", name),
-        TRUE ~ trim(name)
-    )
-    return(result)
-}
 
 query_croots <- function(name, year) {
     body <- paste0("{
@@ -167,7 +138,8 @@ get_croot_info <- function(name, player_id, year) {
 
 expanded_data <- data.frame()
 player_slim_list <- futurecasts %>%
-    select(recruit, player_id, year)
+    select(recruit, player_id, year) %>% group_by(player_id, year) %>%
+    summarise(recruit = first(recruit))
 total <- nrow(player_slim_list)
 
 if (total > 0) {
