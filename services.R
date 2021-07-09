@@ -5,6 +5,8 @@ library(logging)
 library(jsonlite)
 basicConfig()
 
+source("./utils.R")
+
 # Configurable environment variables
 selected_school <- Sys.getenv("TARGET_SCHOOL")
 selected_school <- ifelse(is.na(selected_school) || str_length(selected_school) == 0, "Georgia Tech", selected_school)
