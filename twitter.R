@@ -1,27 +1,23 @@
-library(slackr)
+library(rtweet)
 library(glue)
 library(stringr)
 library(lubridate)
 library(logging)
 basicConfig()
 
-if (!file.exists("./config.dcf")) {
-    loginfo("No config file found, using environment variables to create one")
-    create_config_file(
-        filename = "./config.dcf",
-        token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
-        incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
-        username = Sys.getenv("SLACK_USERNAME"),
-        channel = Sys.getenv("SLACK_CHANNEL")
-    )
-}
-slackr_setup(
-    config_file = "./config.dcf"
-)
+twitter_token <- Sys.getenv("TWITTER_TOKEN")
 
-slack_send <- function(msg) {
-    loginfo(glue("Sending message: {msg}"))
-    slackr_msg(msg)
+tweet_msg <- function(msg) {
+    if (!is.na(twitter_token)) {
+        loginfo(glue("Sending message: {msg}"))
+        post_tweet(
+            status = msg,
+            media = NULL,
+            token = twitter_token
+        )
+    } else {
+        loginfo(glue("Logging message, twitter token is not configured: {msg}"))
+    }
 }
 
 # ----- Data from Rivals -----
@@ -54,7 +50,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
         is_update <- futurecasts[row, "update"]
 
         if (is_update == 1) {
-            slack_send(glue("
+            tweet_msg(glue("
             \U000F16A8 {selected_school} FutureCast
 
             {predictor} ({acc}%) updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
@@ -64,7 +60,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
             {link}
             "))
         } else {
-            slack_send(glue("
+            tweet_msg(glue("
             \U0001F52E New {selected_school} FutureCast
 
             {year} {rank}-Star {pos} {name}
@@ -80,7 +76,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 } else {
     loginfo("No futurecasts to send messages for")
     if (send_empty_updates) {
-        slack_send(glue("No recent Rivals FutureCasts found for {selected_school} class of {target_year} since {last_updated}"))
+        tweet_msg(glue("No recent Rivals FutureCasts found for {selected_school} class of {target_year} since {last_updated}"))
     }
 }
 
@@ -140,14 +136,11 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
                 {link}
             ")
         }
-        slack_send(text)
+        tweet_msg(text)
     }
 } else {
     loginfo("No Crystal Balls to send messages for")
     if (send_empty_updates) {
-        slack_send(glue("No recent 247 Crystal Balls found for {selected_school} class of {target_year} since {last_updated}"))
+        tweet_msg(glue("No recent 247 Crystal Balls found for {selected_school} class of {target_year} since {last_updated}"))
     }
 }
-
-loginfo("Tearing down Slack integration after use")
-slackr_teardown()

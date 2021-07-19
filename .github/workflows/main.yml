@@ -22,7 +22,8 @@ jobs:
               SLACK_INCOMING_URL_PREFIX: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
               SLACK_USERNAME: ${{ secrets.SLACK_USERNAME }}
               SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
-              SLACK_SEND_EMPTY_UPDATES: false
+              SEND_EMPTY_UPDATES: false
+              TWITTER_ENABLED: false
           - name: Update last_updated date file
             run: python ./update_latest.py
           - name: Push last_updated file

@@ -69,13 +69,31 @@ To deploy your new service, follow steps 3-7 in the [Using this tool](#using-thi
 
 ## Service Documentation
 
+To set up environment variables for any service: 
+
+1. Make note of the identifiers used with the prefix of the service you would like to set up (see below services for examples), but ignore any uses of `GITHUB_TOKEN`, which is internal use only.
+2. Configure relevant values for said identifiers at `<your fork's root URL>/settings/environments`. **DO NOT CHECK TOKENS/SECRETS INTO SOURCE.** Typically, to retrieve secrets from GitHub's secrets store, you'll use the format `${{ secrets.<insert secret identifier here> }}`.
+3. Make sure to set the enabled variable (usually in the pattern `<insert service name in all caps here>_ENABLED`) for the service you want to `true` in `.github/workflows/main.yml` or as a local environment variable (if running locally).
+
 ### Slack 
 
-Note: Posting to Slack will fail until you configure the right environment variables in your GitHub repo's Secrets. To set these up and enable Slack posting:
+Prerequisite: you'll need to create a new app at https://api.slack.com/apps.
 
-1. Go to `.github/workflows/main.yml` and check what lines follow the `${{ secrets.<identifier> }}` pattern. Make note of the identifiers used, but ignore any uses of `GITHUB_TOKEN`, which is internal use only.
-2. Configure relevant values for said identifiers at `<your fork's root URL>/settings/environments`. **DO NOT CHECK TOKENS/SECRETS INTO SOURCE.**
-3. Make sure to set `SLACK_ENABLED` to `true` in `.github/workflows/main.yml` or as a local environment variable (if running locally).
+Required variables:
+
+* `SLACK_ENABLED`: Enables Slack posting.
+* `SLACK_BOT_USER_OAUTH_TOKEN`: A Slack token used to authenticate sending messages (configurable from the OAuth & Permissions section of your app on https://api.slack.com).
+* `SLACK_INCOMING_URL_PREFIX`: The incoming webhook URL to use to send messages (configurable from the Incoming Webhooks section of your app on https://api.slack.com).
+* `SLACK_USERNAME`: The Slack username to send messages with.
+* `SLACK_CHANNEL`: The Slack channel to send messages to.
+
+### Twitter 
+
+Prerequisite: Create a Twitter developer account and generate a token: https://developer.twitter.com/ja/docs/basics/authentication/guides/access-tokens
+
+Required variables:
+* `TWITTER_ENABLED`: Enables Twitter posting.
+* `TWITTER_TOKEN`: an API token for Twitter to authenticate sending messages.
 
 ---
 

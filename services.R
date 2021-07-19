@@ -13,6 +13,9 @@ selected_school <- ifelse(is.na(selected_school) || str_length(selected_school) 
 target_year <- Sys.getenv("TARGET_YEAR")
 target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, 2022, target_year)
 
+send_empty_updates <- Sys.getenv("SEND_EMPTY_UPDATES")
+send_empty_updates <- !(is.na(send_empty_updates) || str_length(send_empty_updates) == 0 || tolower(as.character(send_empty_updates)) == "false" || send_empty_updates == FALSE)
+
 last_updated <- tryCatch(
     {
         tmp <- read_json("./last_updated.json")$date
@@ -45,3 +48,14 @@ if (slack_enabled) {
 } else {
     message("Service [Slack] is not enabled, messages will not be sent there")
 }
+
+# Twitter
+twitter_enabled <- Sys.getenv("TWITTER_ENABLED")
+twitter_enabled <- !(is.na(twitter_enabled) || str_length(twitter_enabled) == 0 || tolower(as.character(twitter_enabled)) == "false" || twitter_enabled == FALSE)
+if (twitter_enabled) {
+    message("Service [Twitter] is enabled, messages WILL be sent there")
+    source("./twitter.R")
+} else {
+    message("Service [Twitter] is not enabled, messages will not be sent there")
+}
+
