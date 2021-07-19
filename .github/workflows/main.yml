@@ -16,6 +16,7 @@ jobs:
             env:
               TARGET_YEAR: "2022"
               TARGET_SCHOOL: 'Georgia Tech'
+              TARGET_RIVALS_PREFIX: 'georgiatech'
               SLACK_ENABLED: true
               SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.SLACK_BOT_USER_OAUTH_TOKEN }}
               SLACK_INCOMING_URL_PREFIX: ${{ secrets.SLACK_INCOMING_URL_PREFIX }}
