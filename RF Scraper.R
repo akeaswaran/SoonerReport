@@ -70,20 +70,23 @@ query_futurecasts <- function(link) {
         mutate(
             forecaster = trim(forecaster),
             recruit = sapply(recruit, splitJoin),
-            time_since = gsub(" ago", "", time_since),
+            time_since = gsub(" ago", "", gsub("about ", "", time_since)),
+            time_since = sapply(time_since, splitJoin),
             unit_elapsed = case_when(
+                grepl("month", time_since) == TRUE ~ "month",
                 grepl("s", time_since) == TRUE ~ "second",
                 grepl("m", time_since) == TRUE ~ "minute",
                 grepl("h", time_since) == TRUE ~ "hour",
                 grepl("d", time_since) == TRUE ~ "day",
                 TRUE ~ "unknown"
             ),
-            value_elapsed = as.numeric(gsub("d", "", gsub("h", "", gsub("m", "", gsub("s", "", time_since))))),
+            value_elapsed = as.numeric(gsub("d", "", gsub("h", "", gsub("m", "", gsub("s", "", gsub("month", "", time_since)))))),
             date = case_when(
                 unit_elapsed == "second" ~ (now %m-% seconds(value_elapsed)),
                 unit_elapsed == "minute" ~ (now %m-% minutes(value_elapsed)),
                 unit_elapsed == "hour" ~ (now%m-% hours(value_elapsed)),
-                unit_elapsed == "day" ~ (now %m-% days(value_elapsed))
+                unit_elapsed == "day" ~ (now %m-% days(value_elapsed)),
+                unit_elapsed == "month" ~ (now %m-% months(value_elapsed))
             ),
             player_id = as.numeric(sub(".*-", "", profile_url)),
             year = str_extract(full_text, "\\((\\d{4}),"),
@@ -92,13 +95,18 @@ query_futurecasts <- function(link) {
             forecasted_team = str_extract(full_text, "to (.*)\\."),
             forecasted_team = sub("to ","", forecasted_team),
             forecasted_team = sub("\\.","", forecasted_team),
+            forecasted_team = sub("is now unlikely", "", forecasted_team),
+            forecasted_team = sapply(forecasted_team, splitJoin),
             elapsed = as.double(difftime(date,
                                          last_updated,
                                          units = "secs")),
             year = as.numeric(year),
             unlikely = if_else(grepl("unlikely", full_text, fixed = T), 1, 0),
             update = if_else(grepl("updates", full_text, fixed = T), 1, 0),
-            original_school = if_else(update == 0, "None", str_extract(full_text, "(?<=from\\s)\\w+"))
+            original_school = if_else(update == 0, "None", str_extract(full_text, "from\\s+(.*)\\s+to\\s+")),
+            original_school = sub("\\s+to\\s+","", original_school),
+            original_school = sub("from\\s+","", original_school),
+            original_school = sapply(original_school, splitJoin)
         ) %>%
         select(-time_since, -unit_elapsed, -value_elapsed)
     return(ftrcsts)
