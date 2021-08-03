@@ -33,17 +33,15 @@ query_crystal_balls <- function(url) {
 
   image_names<-cb %>% html_nodes("img") %>% html_attr("alt")
   image_height<-cb %>% html_nodes("img") %>% html_attr("height")
-  links<-cb %>% html_nodes("a") %>% html_attr("href")
+  image_class<-cb %>% html_nodes("img") %>% html_attr("class")
+  plinks<-cb %>% html_nodes("a") %>% html_attr("href")
   pred_date<-cb %>% html_elements(".prediction-date") %>% html_text()
   player_names<-cb %>% html_nodes(".name")
   names <- html_children(player_names)
   predictor_names<-cb %>% html_nodes(".predicted-by") %>% html_nodes("a") %>%
-    html_nodes(".jsonly") %>% html_attr("alt")
-  predictor_stats <- cb %>% html_nodes(".accuracy") %>% html_nodes("span") %>% html_text()
-  p_stats <- data.frame(acc = predictor_stats)
-  seq <- seq(to = 150, from = 3, by = 3)
-  p_stats <- p_stats[seq, ]
-  p_stats <- gsub(" ","",p_stats)
+    html_nodes("span") %>% html_text()
+  forecaster_links <- cb %>% html_elements(".predicted-by") %>% html_elements("a") %>% html_attr("href")
+  flinks <- data.frame(link = forecaster_links, number = 1:50)
   confidence<-cb %>% html_nodes(".confidence") %>% html_nodes(".confidence-wrap") %>%
     html_text()
   confidence <- data.frame(confidence <- confidence)
@@ -62,44 +60,43 @@ query_crystal_balls <- function(url) {
 
     player_info <- bind_rows(player_info, info)
   }
-  loginfo(glue("Converted CBs into {nrow(player_info)} player info records..."))
 
   player_info <- player_info %>% slice(2:51)
-  player_info$number <- 1:nrow(player_info)
-  loginfo(glue("Assigned ids to {nrow(player_info)} records..."))
+  player_info$number <- 1:50
 
-  images <- data.frame(names = image_names, height = image_height)
-  teams <- images %>% dplyr::filter(height == 24)
+  images <- data.frame(names = image_names, height = as.integer(image_height), class = image_class)
+  images$class <- replace_na(images$class, "")
+  teams <- images %>% dplyr::filter(height == 24, class != "old")
 
   zero <- data.frame(name = span)
   zero <- zero %>% dplyr::slice(31:731)
 
   zeroes <- which(zero == "icon-zero")
   emptys <- floor(zeroes/14)
+  emptys <- sort(emptys)
 
   if(length(emptys!=0)) {
     teams$number <- 1:nrow(teams)
-    cut <- teams %>% dplyr::filter(number>(emptys-1))
-    teams <- teams %>% dplyr::filter(number<(emptys))
-    cut <- cut %>% mutate(new = number+1) %>% select(-number, number = new)
-    teams <- bind_rows(teams, cut)
-    new_row <- data.frame(names = "icon-zero", height = as.factor(24), number = emptys)
-    teams <- bind_rows(teams, new_row)
-  } else{
-    teams$number <- 1:nrow(teams)
-  }
+    for(i in 1:length(emptys)) {
+      current_empty <- emptys[i]
+      cut <- teams %>% dplyr::filter(number>(current_empty-1))
+      teams <- teams %>% dplyr::filter(number<(current_empty))
+      cut <- cut %>% mutate(new = number+1) %>% select(-number, number = new)
+      teams <- bind_rows(teams, cut)
+      new_row <- data.frame(names = "icon-zero", height = 24, number = current_empty)
+      teams <- bind_rows(teams, new_row)
+    }
+  } else{teams$number <- 1:50}
   pred_date <- as.data.frame(pred_date)
-  pred_date$number = 1:nrow(pred_date)
+  pred_date$number = 1:50
   teams <- left_join(teams, pred_date, by="number")
 
-  loginfo(glue("Found {nrow(teams)} teams in dataset"))
-
-  targets <- data.frame(link = links)
-  sep <- targets %>% separate(col = link, into = c("prefix", "body"), sep = 8)
+  targets <- data.frame(plink = plinks)
+  sep <- targets %>% separate(col = plink, into = c("prefix", "body"), sep = 8)
   sep <- sep %>% separate(col = "body", into = c("site", "body"), sep = 9)
   sep <- sep %>% separate(col = "body", into = c("suffix", "body"), sep = 5)
   sep <- sep %>% separate(col = "body", into = c("type", "body"), sep = 6)
-  targets <- targets %>% mutate(site = sep$site, type = sep$type) %>% filter(type == "Player") %>% mutate(number = 1:nrow(.))
+  targets <- targets %>% mutate(site = sep$site, type = sep$type) %>% filter(type == "Player") %>% mutate(number = 1:50)
 
   new_names <- data.frame(name = player_info$name)
   sep <- new_names %>% separate(col = name, into = c("A", "B", "C", "D", "E"), sep = "                ")
@@ -117,6 +114,7 @@ query_crystal_balls <- function(url) {
   player_info$ht <- gsub(" ","",player_info$ht)
   player_info$wt <- sep3$A
   player_info$wt <- gsub(" |\n","",player_info$wt)
+  player_info <- player_info %>% mutate(wt = as.integer(wt))
   player_info$pos <- new_pos$pos
 
   new_rank <- data.frame(rank = player_info$rank)
@@ -124,22 +122,25 @@ query_crystal_balls <- function(url) {
   new_rank$rank <- sep$B
   sep <- new_rank %>% separate(col = rank, into = c("A", "B"), sep = "            ")
   player_info$rank <- sep$A
-  player_info <- player_info %>% mutate(star = if_else(rank>0.9830, "5-Star",
+  player_info <- player_info %>% mutate(star = if_else(rank>0.9832, "5-Star",
                                                        if_else(rank>0.8900, "4-Star",
                                                                "3-Star")))
 
   cb_list <- left_join(teams, targets, by="number")
-
-  loginfo(glue("Parsed/Cleaned {nrow(cb_list)} records from 247Sports. Filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
+  loginfo(glue("Parsed/Cleaned {nrow(cb_list)} records from 247Sports link {url}"))
 
   cb_list$pred_date=mdy_hm(cb_list$pred_date, tz = "UTC")
   cb_list <- cb_list %>% mutate(elapsed = as.double(difftime(pred_date,
                                                              last_updated,
                                                              units = "secs")))
+
   cb_list <- left_join(cb_list, player_info, by="number")
-  predictor_info <- data.frame(predictor = predictor_names, acc = p_stats)
-  predictor_info$number <- 1:nrow(predictor_info)
-  predictor_info$confidence <- confidence
+  seqA <- seq(1,99, by = 2)
+  seqB <- seq(2,100, by=2)
+  predictor_info <- data.frame(predictor = predictor_names[seqA],
+                               title = predictor_names[seqB],
+                               flink = flinks$link, number = 1:50)
+  predictor_info$confidence <- as.integer(confidence)
   cb_list <- left_join(cb_list, predictor_info, by="number")
   return(cb_list)
 }
@@ -150,8 +151,8 @@ for (item in links) {
   tmp = query_crystal_balls(item)
   new_cbs <- rbind(new_cbs, tmp)
 }
-loginfo(glue("Found {nrow(new_cbs)} total Crystal Balls, applying criteria"))
+loginfo(glue("Found {nrow(new_cbs)} total Crystal Balls, filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
 
-new_cbs <- new_cbs %>% filter(elapsed >= 0 & (names == selected_school))
+new_cbs <- new_cbs %>% filter(elapsed >= 0 & (grepl(selected_school, names) == TRUE))
 
 loginfo(glue("Found {nrow(new_cbs)} Crystal Balls that match given criteria."))
