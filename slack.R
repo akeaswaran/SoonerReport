@@ -118,7 +118,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
 
             {target_year} {pos} {name}
             {ht} / {wt}
-            {{hs} ({state})
+            {hs} ({state})
 
             By: {predictor} ({acc} in {target_year})
             Confidence: {confidence}/10
