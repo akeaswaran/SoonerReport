@@ -92,7 +92,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         pred <- new_cbs %>% slice(i)
 
         name <- trim(pred$name)
-        link <- as.character(pred$link)
+        link <- as.character(pred$plink)
         pos <- trim(pred$pos)
         rank <- trim(pred$star)
         ht <- trim(pred$ht)
