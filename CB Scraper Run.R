@@ -151,8 +151,12 @@ for (item in links) {
   tmp = query_crystal_balls(item)
   new_cbs <- rbind(new_cbs, tmp)
 }
-loginfo(glue("Found {nrow(new_cbs)} total Crystal Balls, filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
+loginfo(glue("Found {nrow(new_cbs)} total Crystal Balls, deduping and filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
 
-new_cbs <- new_cbs %>% filter(elapsed >= 0 & (grepl(selected_school, names) == TRUE))
+new_cbs <- new_cbs %>%
+  group_by(predictor, name, names) %>%
+  slice(1) %>%
+  ungroup() %>%
+  filter(elapsed >= 0 & (grepl(selected_school, names) == TRUE))
 
 loginfo(glue("Found {nrow(new_cbs)} Crystal Balls that match given criteria."))
