@@ -46,36 +46,49 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
         ht <- fixHeight(futurecasts[row, "height"])
         wt <- futurecasts[row, "weight"]
         predictor <- futurecasts[row, "forecaster"]
-        acc <- futurecasts[row, "accuracy"]
         hs <- player_hs[2]
         hometown <- futurecasts[row, "hometown"]
         og_school <- futurecasts[row, "original_school"]
         new_school <- futurecasts[row, "forecasted_team"]
         is_update <- futurecasts[row, "update"]
+        is_unlikely <- futurecasts[row, "unlikely"]
 
-        if (is_update == 1) {
-            slack_send(glue("
+        if (is_update == 1 && is_unlikely == 0) {
+            text <- glue("
             \U000F16A8 {selected_school} FutureCast
 
-            {predictor} ({acc}%) updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
+            {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
 
             {ht} / {wt}
             {hs} ({hometown})
             {link}
-            "))
+            ")
+
+        } else if (is_unlikely == 1) {
+            text <- glue("
+            \U000F16A8 {selected_school} FutureCast
+
+            {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to be unlikely
+
+            {ht} / {wt}
+            {hs} ({hometown})
+            {link}
+            ")
+
         } else {
-            slack_send(glue("
+            text <- glue("
             \U0001F52E New {selected_school} FutureCast
 
             {year} {rank}-Star {pos} {name}
             {ht} / {wt}
             {hs} ({hometown})
 
-            By: {predictor} ({acc}%)
+            By: {predictor}
 
             {link}
-            "))
+            ")
         }
+        slack_send(text)
     }
 } else {
     loginfo("No futurecasts to send messages for")
