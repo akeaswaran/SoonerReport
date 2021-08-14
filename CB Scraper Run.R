@@ -129,7 +129,8 @@ query_crystal_balls <- function(url) {
   cb_list <- left_join(teams, targets, by="number")
   loginfo(glue("Parsed/Cleaned {nrow(cb_list)} records from 247Sports link {url}"))
 
-  cb_list$pred_date=mdy_hm(cb_list$pred_date, tz = "UTC")
+  cb_list$pred_date <- with_tz(mdy_hm(cb_list$pred_date, tz = "America/New_York"), tzone = "UTC")
+
   cb_list <- cb_list %>% mutate(elapsed = as.double(difftime(pred_date,
                                                              last_updated,
                                                              units = "secs")))
