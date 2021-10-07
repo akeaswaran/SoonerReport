@@ -5,7 +5,14 @@ library(lubridate)
 library(logging)
 basicConfig()
 
-twitter_token <- Sys.getenv("TWITTER_TOKEN")
+twitter_token <- create_token(
+    app = "SoonerReport",
+    consumer_key = Sys.getenv("TWITTER_API_KEY"),
+    consumer_secret = Sys.getenv("TWITTER_API_SECRET"),
+    access_token = Sys.getenv("TWITTER_ACCESS_TOKEN"),
+    access_secret = Sys.getenv("TWITTER_ACCESS_SECRET"),
+    set_renv = FALSE
+)
 
 tweet_msg <- function(msg) {
     if (!is.na(twitter_token)) {

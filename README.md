@@ -90,11 +90,16 @@ Required variables:
 
 ### Twitter 
 
-Prerequisite: Create a Twitter developer account and generate a token: https://developer.twitter.com/ja/docs/basics/authentication/guides/access-tokens
+Prerequisite: Create a Twitter developer account and generate the relevant credentials: https://developer.twitter.com/en/docs/authentication/oauth-1-0a
+
+The environment variables mirror the documentation for rtweet: https://docs.ropensci.org/rtweet/reference/rtweet_user.html#arguments
 
 Required variables:
 * `TWITTER_ENABLED`: Enables Twitter posting.
-* `TWITTER_TOKEN`: an API token for Twitter to authenticate sending messages.
+* `TWITTER_API_KEY`: an application API key from Twitter.
+* `TWITTER_API_SECRET`: an application API secret from Twitter.
+* `TWITTER_ACCESS_TOKEN`: an access token for Twitter to authenticate sending messages.
+* `TWITTER_ACCESS_SECRET`: an access secret for Twitter to authenticate sending messages.
 
 ---
 
