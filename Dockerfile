@@ -9,7 +9,8 @@ RUN install2.r --error \
     jsonlite \
     stringr \
     slackr \
-    logging
+    logging \
+    rtweet
 
 COPY . .
 
