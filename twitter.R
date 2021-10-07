@@ -64,8 +64,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 
             {ht} / {wt}
             {hs} ({hometown})
-            {link}
-            "))
+            {link}"))
         } else {
             tweet_msg(glue("
             \U0001F52E New {selected_school} FutureCast
@@ -76,8 +75,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 
             By: {predictor} ({acc}%)
 
-            {link}
-            "))
+            {link}"))
         }
     }
 } else {
@@ -116,8 +114,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         state <- sep$State
         if(is.na(rank)) {
             text <-  glue(
-                "
-            \U0001f6A8 New Crystal Ball for {selected_school}
+            "\U0001f6A8 New Crystal Ball for {selected_school}
 
             {target_year} {pos} {name}
             {ht} / {wt}
@@ -126,22 +123,19 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
             By: {predictor} ({acc} in {target_year})
             Confidence: {confidence}/10
 
-            {link}
-            ")
+            {link}")
         } else {
             text <-  glue(
-                "
-                \U0001f6A8 New Crystal Ball for {selected_school}
+            "\U0001f6A8 New Crystal Ball for {selected_school}
 
-                {target_year} {star} {pos} {name}
-                {ht} / {wt}
-                {hs} ({state})
+            {target_year} {star} {pos} {name}
+            {ht} / {wt}
+            {hs} ({state})
 
-                By: {predictor} ({acc} in {target_year})
-                Confidence: {confidence}/10
+            By: {predictor} ({acc} in {target_year})
+            Confidence: {confidence}/10
 
-                {link}
-            ")
+            {link}")
         }
         tweet_msg(text)
     }

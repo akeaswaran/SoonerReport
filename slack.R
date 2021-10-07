@@ -54,30 +54,28 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
         is_unlikely <- futurecasts[row, "unlikely"]
 
         if (is_update == 1 && is_unlikely == 0) {
-            text <- glue("
-            \U000F16A8 {selected_school} FutureCast
+            text <- glue(
+            "\U000F16A8 {selected_school} FutureCast
 
             {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
 
             {ht} / {wt}
             {hs} ({hometown})
-            {link}
-            ")
+            {link}")
 
         } else if (is_unlikely == 1) {
-            text <- glue("
-            \U000F16A8 {selected_school} FutureCast
+            text <- glue(
+            "\U000F16A8 {selected_school} FutureCast
 
             {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to be unlikely
 
             {ht} / {wt}
             {hs} ({hometown})
-            {link}
-            ")
+            {link}")
 
         } else {
-            text <- glue("
-            \U0001F52E New {selected_school} FutureCast
+            text <- glue(
+            "\U000F16A8 New {selected_school} FutureCast
 
             {year} {rank}-Star {pos} {name}
             {ht} / {wt}
@@ -85,8 +83,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 
             By: {predictor}
 
-            {link}
-            ")
+            {link}")
         }
         slack_send(text)
     }
@@ -126,8 +123,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         state <- sep$State
         if(is.na(rank)) {
             text <-  glue(
-                "
-            \U0001f6A8 New Crystal Ball for {selected_school}
+            "\U0001f6A8 New Crystal Ball for {selected_school}
 
             {target_year} {pos} {name}
             {ht} / {wt}
@@ -136,22 +132,19 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
             By: {predictor}
             Confidence: {confidence}/10
 
-            {link}
-            ")
+            {link}")
         } else {
             text <-  glue(
-                "
-                \U0001f6A8 New Crystal Ball for {selected_school}
+            "\U0001f6A8 New Crystal Ball for {selected_school}
 
-                {target_year} {star} {pos} {name}
-                {ht} / {wt}
-                {hs} ({state})
+            {target_year} {star} {pos} {name}
+            {ht} / {wt}
+            {hs} ({state})
 
-                By: {predictor}
-                Confidence: {confidence}/10
+            By: {predictor}
+            Confidence: {confidence}/10
 
-                {link}
-            ")
+            {link}")
         }
         slack_send(text)
     }
