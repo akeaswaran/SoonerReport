@@ -124,9 +124,21 @@ query_crystal_balls <- function(url) {
     new_rank$rank <- sep$B
     sep <- new_rank %>% separate(col = rank, into = c("A", "B"), sep = "            ")
     player_info$rank <- sep$A
-    player_info <- player_info %>% mutate(star = if_else(rank>0.9832, "5-Star",
-                                                         if_else(rank>0.8900, "4-Star",
-                                                                 "3-Star")))
+    player_info <- player_info %>%
+        mutate(
+            rank = trim(rank),
+            rank = case_when(
+                # is.na(rank) ~ 0.0,
+                (grepl("NA", rank) == TRUE) ~ "0.0",
+                TRUE ~ rank
+            ),
+            star = case_when(
+                (rank > 0.9832) ~ "5-Star",
+                (rank > 0.8900) ~ "4-Star",
+                (rank == 0.0) ~ "",
+                TRUE ~ "3-Star"
+            )
+        )
 
     cb_list <- left_join(teams, targets, by="number")
     loginfo(glue("Parsed/Cleaned {nrow(cb_list)} records from 247Sports link {url}"))
