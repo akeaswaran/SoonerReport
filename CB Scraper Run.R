@@ -12,7 +12,7 @@ loginfo(glue("Starting 247 Crystal Ball scraping for target year {target_year}..
 selected_247_prefix <- Sys.getenv("TARGET_247_PREFIX") # prefix for a team-specific 247Sports blog. Will usually be after the "https://247sports.com/college/" portion of the team site URL.
 selected_247_prefix <- ifelse(is.na(selected_247_prefix) || str_length(selected_247_prefix) == 0, "georgia-tech", selected_247_prefix)
 
-national_url <- paste0("https://247sports.com/Season/",target_year,"-Football/TargetPredictions/")
+national_url <- paste0("https://247sports.com/Season/",target_year,"-Football/CurrentTargetPredictions/")
 team_url <- paste0("https://247sports.com/college/",selected_247_prefix,"/Season/",target_year,"-Football/CurrentTargetPredictions/")
 
 query_crystal_balls <- function(url) {
