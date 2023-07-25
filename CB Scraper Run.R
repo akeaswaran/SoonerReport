@@ -16,7 +16,7 @@ national_url <- paste0("https://247sports.com/Season/",target_year,"-Football/Cu
 team_url <- paste0("https://247sports.com/college/",selected_247_prefix,"/Season/",target_year,"-Football/CurrentTargetPredictions/")
 
 
-find_rankings <- function(rankings_section, composite_only = TRUE) {
+find_rankings <- function(rankings_sections, composite_only = TRUE) {
     composite_ranks = data.frame(
         "title" = c(),
         "rank" = c()
