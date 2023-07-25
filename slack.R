@@ -1,27 +1,27 @@
-library(slackr)
+# library(slackr)
 library(glue)
 library(stringr)
 library(lubridate)
 library(logging)
 basicConfig()
-
-if (!file.exists("./config.dcf")) {
-    loginfo("No config file found, using environment variables to create one")
-    create_config_file(
-        filename = "./config.dcf",
-        token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
-        incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
-        username = Sys.getenv("SLACK_USERNAME"),
-        channel = Sys.getenv("SLACK_CHANNEL")
-    )
-}
-slackr_setup(
-    config_file = "./config.dcf"
-)
+#
+# if (!file.exists("./config.dcf")) {
+#     loginfo("No config file found, using environment variables to create one")
+#     create_config_file(
+#         filename = "./config.dcf",
+#         token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
+#         incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
+#         username = Sys.getenv("SLACK_USERNAME"),
+#         channel = Sys.getenv("SLACK_CHANNEL")
+#     )
+# }
+# slackr_setup(
+#     config_file = "./config.dcf"
+# )
 
 slack_send <- function(msg) {
     loginfo(glue("Sending message: {msg}"))
-    slackr_msg(msg)
+    # slackr_msg(msg)
 }
 
 # ----- Data from Rivals -----
@@ -104,12 +104,12 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         name <- trim(pred$name)
         link <- as.character(pred$plink)
         pos <- trim(pred$pos)
-        rank <- trim(pred$star)
+        # rank <- trim(pred$star)
         ht <- trim(pred$ht)
         wt <- trim(pred$wt)
         predictor <- trim(pred$predictor)
-        acc <- trim(pred$acc)
-        star <- trim(pred$star)
+        # acc <- trim(pred$acc)
+        # star <- trim(pred$star)
         confidence <- trim(pred$confidence)
 
         player_page <- read_html(link) %>% html_nodes(".upper-cards") %>% html_nodes(".details") %>%
@@ -121,31 +121,41 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         hometowm <- data.frame(state = player_page[4])
         sep <- hometowm %>% separate(col = state, into = c("Town", "State"), sep = ", ")
         state <- sep$State
-        if(is.na(rank)) {
-            text <-  glue(
+
+        composite_info = grab_composite_content(link)
+
+        assembled_str = ""
+        if (!is.na(composite_info$stars)) {
+            assembled_str <- glue("Stars: {composite_info$stars}")
+        }
+
+        if (!is.na(composite_info$rating)) {
+            assembled_str <- glue("{assembled_str}\nRating: {composite_info$rating}")
+        }
+
+        if (!is.null(composite_info$ranks)) {
+            writeable = composite_info$ranks %>%
+                mutate(
+                    pasteable = glue("{title}: #{rank}")
+                )
+            rank_str = paste0(writeable$pasteable, collapse = " / ")
+
+            assembled_str <- glue("{assembled_str}\n{rank_str}")
+        }
+
+        text <-  glue(
             "\U0001f6A8 New Crystal Ball for {selected_school}
 
             {target_year} {pos} {name}
             {ht} / {wt}
             {hs} ({state})
 
-            By: {predictor}
-            Confidence: {confidence}/10
-
-            {link}")
-        } else {
-            text <-  glue(
-            "\U0001f6A8 New Crystal Ball for {selected_school}
-
-            {target_year} {star} {pos} {name}
-            {ht} / {wt}
-            {hs} ({state})
+            {assembled_str}
 
             By: {predictor}
             Confidence: {confidence}/10
 
             {link}")
-        }
         slack_send(text)
     }
 } else {
@@ -155,5 +165,5 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
     }
 }
 
-loginfo("Tearing down Slack integration after use")
-slackr_teardown()
+# loginfo("Tearing down Slack integration after use")
+# slackr_teardown()

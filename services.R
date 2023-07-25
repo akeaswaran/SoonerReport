@@ -10,8 +10,8 @@ source("./utils.R")
 # Configurable environment variables
 selected_school <- Sys.getenv("TARGET_SCHOOL")
 selected_school <- ifelse(is.na(selected_school) || str_length(selected_school) == 0, "Georgia Tech", selected_school)
-target_year <- Sys.getenv("TARGET_YEAR")
-target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, 2022, target_year)
+target_year <- ifelse(month(Sys.Date()) >= 7, year(Sys.Date()) + 1, year(Sys.Date()))
+# target_year <- ifelse(is.na(target_year) || str_length(target_year) == 0, year(Sys.Date()), target_year)
 
 send_empty_updates <- Sys.getenv("SEND_EMPTY_UPDATES")
 send_empty_updates <- !(is.na(send_empty_updates) || str_length(send_empty_updates) == 0 || tolower(as.character(send_empty_updates)) == "false" || send_empty_updates == FALSE)

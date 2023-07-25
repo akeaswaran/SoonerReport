@@ -15,6 +15,68 @@ selected_247_prefix <- ifelse(is.na(selected_247_prefix) || str_length(selected_
 national_url <- paste0("https://247sports.com/Season/",target_year,"-Football/CurrentTargetPredictions/")
 team_url <- paste0("https://247sports.com/college/",selected_247_prefix,"/Season/",target_year,"-Football/CurrentTargetPredictions/")
 
+
+find_rankings <- function(rankings_section, composite_only = TRUE) {
+    composite_ranks = data.frame(
+        "title" = c(),
+        "rank" = c()
+    )
+
+    stars = NA
+    rating = NA
+
+    for (item in rankings_sections) {
+        title = item %>%
+            html_element(".title") %>%
+            html_text()
+
+        if (!grepl("Composite", title) && composite_only) {
+            next
+        }
+
+        stars <- item %>%
+            html_elements(".ranking > .stars-block > .yellow") %>%
+            length()
+
+        rating <- item %>%
+            html_elements(".ranking > .rank-block") %>%
+            html_text()
+
+        ranks_list <- item %>%
+            html_elements("ul.ranks-list > li")
+
+        for (li in ranks_list) {
+            # li = ranks_list[[i]]
+            r_title = li %>% html_element("b") %>% html_text()
+            r_rank = li %>% html_element("a:not(.rank-history-link) > strong") %>% html_text()
+            index = nrow(composite_ranks) + 1
+            composite_ranks[index, "title"] <- r_title
+            composite_ranks[index, "rank"] <- r_rank
+        }
+    }
+    return(
+        list(
+            "stars" = stars,
+            "rating" = as.numeric(str_trim(rating)),
+            "ranks" = composite_ranks
+        )
+    )
+}
+
+grab_composite_content <- function(player_url) {
+    # #page-content > div.main-div.clearfix > section > header > div.lower-cards > section.rankings > section:nth-child(3) > div > div.rank-block
+    # player_url = "https://247sports.com/Player/jameson-riggs-46133338/"
+    player_page = read_html(player_url)
+    rankings_sections = player_page %>%
+        html_elements("section.rankings-section")
+
+    player_content = find_rankings(rankings_section)
+    if (is.na(player_content[["stars"]])) {
+        player_content <- find_rankings(rankings_section, FALSE)
+    }
+    return(player_content)
+}
+
 query_crystal_balls <- function(url) {
     # # check connection
     # test_result <- GET(url = year_url)
@@ -124,21 +186,27 @@ query_crystal_balls <- function(url) {
     new_rank$rank <- sep$B
     sep <- new_rank %>% separate(col = rank, into = c("A", "B"), sep = "            ")
     player_info$rank <- sep$A
-    player_info <- player_info %>%
-        mutate(
-            rank = trim(rank),
-            rank = case_when(
-                # is.na(rank) ~ 0.0,
-                (grepl("NA", rank) == TRUE) ~ "0.0",
-                TRUE ~ rank
-            ),
-            star = case_when(
-                (rank > 0.9832) ~ "5-Star",
-                (rank > 0.8900) ~ "4-Star",
-                (rank == 0.0) ~ "",
-                TRUE ~ "3-Star"
-            )
-        )
+    # player_info <- player_info %>%
+    #     mutate(
+    #         rank = trim(rank),
+    #         rank = case_when(
+    #             # is.na(rank) ~ 0.0,
+    #             (grepl("NA", rank) == TRUE) ~ 0,
+    #             TRUE ~ as.numeric(rank)
+    #         ),
+    #         star = case_when(
+    #             # (rank > 0.9832) ~ "5-Star",
+    #             # (rank > 0.8900) ~ "4-Star",
+    #             # (rank == 0.0) ~ "",
+    #             # TRUE ~ "3-Star"
+    #             rank >= 98 & rank <= 110 ~ "5-Star",
+    #             rank >= 90 & rank <= 97 ~ "4-Star",
+    #             rank >= 80 & rank <= 89 ~ "3-Star",
+    #             rank >= 70 & rank <= 79 ~ "2-Star",
+    #             # rank >= 98 & rank <= 110 ~ "1-Star",
+    #             .default = ""
+    #         )
+    #     )
 
     cb_list <- left_join(teams, targets, by="number")
     loginfo(glue("Parsed/Cleaned {nrow(cb_list)} records from 247Sports link {url}"))
@@ -160,15 +228,15 @@ query_crystal_balls <- function(url) {
     return(cb_list)
 }
 
-new_cbs <- data.frame()
+final_cbs <<- data.frame()
 links <- c(national_url, team_url)
 for (item in links) {
     tmp = query_crystal_balls(item)
-    new_cbs <- rbind(new_cbs, tmp)
+    final_cbs <- rbind(final_cbs, tmp)
 }
-loginfo(glue("Found {nrow(new_cbs)} total Crystal Balls, deduping and filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
+loginfo(glue("Found {nrow(final_cbs)} total Crystal Balls, deduping and filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
 
-new_cbs <- new_cbs %>%
+new_cbs <- final_cbs %>%
     group_by(predictor, name, names) %>%
     slice(1) %>%
     ungroup() %>%
