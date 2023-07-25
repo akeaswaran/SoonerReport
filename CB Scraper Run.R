@@ -70,9 +70,9 @@ grab_composite_content <- function(player_url) {
     rankings_sections = player_page %>%
         html_elements("section.rankings-section")
 
-    player_content = find_rankings(rankings_section)
+    player_content = find_rankings(rankings_sections)
     if (is.na(player_content[["stars"]])) {
-        player_content <- find_rankings(rankings_section, FALSE)
+        player_content <- find_rankings(rankings_sections, FALSE)
     }
     return(player_content)
 }
