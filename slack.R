@@ -55,7 +55,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 
         if (is_update == 1 && is_unlikely == 0) {
             text <- glue(
-            "\U000F16A8 {selected_school} FutureCast
+            "🚨 {selected_school} FutureCast
 
             {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
 
@@ -65,7 +65,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 
         } else if (is_unlikely == 1) {
             text <- glue(
-            "\U000F16A8 {selected_school} FutureCast
+            "🚨 {selected_school} FutureCast
 
             {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to be unlikely
 
@@ -75,7 +75,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 
         } else {
             text <- glue(
-            "\U000F16A8 New {selected_school} FutureCast
+            "🚨 New {selected_school} FutureCast
 
             {year} {rank}-Star {pos} {name}
             {ht} / {wt}
@@ -144,7 +144,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
         }
 
         text <-  glue(
-            "\U0001f6A8 New Crystal Ball for {selected_school}
+            "🔮 New Crystal Ball for {selected_school}
 
             {target_year} {pos} {name}
             {ht} / {wt}
