@@ -1,27 +1,27 @@
-# library(slackr)
+library(slackr)
 library(glue)
 library(stringr)
 library(lubridate)
 library(logging)
-# basicConfig()
-#
-# if (!file.exists("./config.dcf")) {
-#     loginfo("No config file found, using environment variables to create one")
-#     create_config_file(
-#         filename = "./config.dcf",
-#         token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
-#         incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
-#         username = Sys.getenv("SLACK_USERNAME"),
-#         channel = Sys.getenv("SLACK_CHANNEL")
-#     )
-# }
-# slackr_setup(
-#     config_file = "./config.dcf"
-# )
+basicConfig()
+
+if (!file.exists("./config.dcf")) {
+    loginfo("No config file found, using environment variables to create one")
+    create_config_file(
+        filename = "./config.dcf",
+        token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
+        incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
+        username = Sys.getenv("SLACK_USERNAME"),
+        channel = Sys.getenv("SLACK_CHANNEL")
+    )
+}
+slackr_setup(
+    config_file = "./config.dcf"
+)
 
 slack_send <- function(msg) {
     loginfo(glue("Sending message: {msg}"))
-    # slackr_msg(msg)
+    slackr_msg(msg)
 }
 
 # ----- Data from Rivals -----
@@ -192,5 +192,5 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
     }
 }
 
-# loginfo("Tearing down Slack integration after use")
-# slackr_teardown()
+loginfo("Tearing down Slack integration after use")
+slackr_teardown()
