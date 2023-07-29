@@ -63,6 +63,176 @@ find_rankings <- function(rankings_sections, composite_only = TRUE) {
     )
 }
 
+p5_teams = c(
+    "georgia",
+    "ohio state",
+    "florida",
+    "michigan",
+    "alabama",
+    "penn state",
+    "notre dame",
+    "florida state",
+    "clemson",
+    "tennessee",
+    "texas a&m",
+    "lsu",
+    "usc",
+    "oklahoma",
+    "miami",
+    "stanford",
+    "arkansas",
+    "nebraska",
+    "texas",
+    "wisconsin",
+    "north carolina",
+    "georgia tech",
+    "purdue",
+    "south carolina",
+    "ole miss",
+    "auburn",
+    "iowa",
+    "minnesota",
+    "mississippi state",
+    "texas tech",
+    "rutgers",
+    "duke",
+    "pittsburgh",
+    "virginia tech",
+    "vanderbilt",
+    "arizona",
+    "cincinnati",
+    "west virginia",
+    "illinois",
+    "kansas",
+    "arizona state",
+    "ucf",
+    "kentucky",
+    "maryland",
+    "wake forest",
+    "syracuse",
+    "louisville",
+    "michigan state",
+    "washington",
+    "iowa state",
+    "nc state",
+    "oklahoma state",
+    "tcu",
+    "baylor",
+    "indiana",
+    "virginia",
+    "missouri",
+    "ucla",
+    "colorado",
+    "northwestern",
+    "oregon state",
+    "utah",
+    "boston college",
+    "washington state",
+    "california",
+    "kansas state",
+    "brigham young",
+    "houston"
+)
+
+format_offers_string <- function(team_interests, power_only = TRUE) {
+    teams_offered = team_interests %>%
+        filter(offer)
+
+    if (power_only) {
+        teams_offered <- teams_offered %>%
+            filter(tolower(team) %in% p5_teams)
+    }
+
+    if (nrow(teams_offered) == 0) {
+        if (power_only) {
+            return("No P5 offers available.")
+        } else {
+            return("No offers available.")
+        }
+    }
+
+    return(paste(teams_offered$team, collapse = ", "))
+}
+
+grab_team_interests <- function(player_url) {
+    player_page = read_html(player_url)
+    player_recruitment_url = player_page %>%
+        html_element("a.college-comp__view-all") %>%
+        html_attr('href')
+
+    # player_recruitment_url = "https://247sports.com/recruitment/jameson-riggs-156395/recruitinterests/"
+    #
+    interests = read_html(player_recruitment_url)
+
+    interest_records = interests %>%
+        html_elements('ul.recruit-interest-index_lst > li')
+
+    teams = interest_records %>%
+        html_element('img') %>%
+        html_attr('alt')
+
+    interest_details = interest_records %>%
+        html_element('.left > .secondary_blk')
+
+    visit = interest_details %>%
+        html_element('.visit') %>%
+        html_text() %>%
+        str_trim()
+    visit = str_trim(gsub("Visit:", "", visit))
+    visit = sapply(visit, function (x) {
+        if (x == "-") {
+            return(NA_character_)
+        }
+        return(x)
+    })
+
+    offer = interest_details %>%
+        html_element('.offer') %>%
+        html_text()
+    offer = str_trim(gsub("Offer:", "", offer))
+    offer = grepl("yes", tolower(offer))
+
+    recruiters = list()
+    for (item in interest_details) {
+        target = item %>%
+            html_element('ul.interest-details_lst')
+        if (length(target) == 0) {
+            recruiters[length(recruiters) + 1] <- NA_character_
+        } else {
+            recruiters[length(recruiters) + 1] <- paste0(target %>% html_elements('li > a') %>% html_text(), collapse = ", ")
+        }
+    }
+
+    recruit_interests = data.frame(
+        "team" = teams,
+        "visit" = visit,
+        "offer" = offer,
+        "recruiters" = paste0(recruiters)
+    )
+    recruit_interests$recruiters = sapply(recruit_interests$recruiters, function (x) {
+        if (x == "NA") {
+            return(NA_character_)
+        }
+        return(x)
+    })
+
+    return(recruit_interests)
+}
+
+grab_composite_content <- function(player_url) {
+    # #page-content > div.main-div.clearfix > section > header > div.lower-cards > section.rankings > section:nth-child(3) > div > div.rank-block
+    # player_url = "https://247sports.com/Player/jameson-riggs-46133338/"
+    player_page = read_html(player_url)
+    rankings_sections = player_page %>%
+        html_elements("section.rankings-section")
+
+    player_content = find_rankings(rankings_sections)
+    if (is.na(player_content[["stars"]])) {
+        player_content <- find_rankings(rankings_sections, FALSE)
+    }
+    return(player_content)
+}
+
 grab_composite_content <- function(player_url) {
     # #page-content > div.main-div.clearfix > section > header > div.lower-cards > section.rankings > section:nth-child(3) > div > div.rank-block
     # player_url = "https://247sports.com/Player/jameson-riggs-46133338/"

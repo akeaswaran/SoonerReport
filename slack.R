@@ -1,27 +1,27 @@
-library(slackr)
+# library(slackr)
 library(glue)
 library(stringr)
 library(lubridate)
 library(logging)
-basicConfig()
-
-if (!file.exists("./config.dcf")) {
-    loginfo("No config file found, using environment variables to create one")
-    create_config_file(
-        filename = "./config.dcf",
-        token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
-        incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
-        username = Sys.getenv("SLACK_USERNAME"),
-        channel = Sys.getenv("SLACK_CHANNEL")
-    )
-}
-slackr_setup(
-    config_file = "./config.dcf"
-)
+# basicConfig()
+#
+# if (!file.exists("./config.dcf")) {
+#     loginfo("No config file found, using environment variables to create one")
+#     create_config_file(
+#         filename = "./config.dcf",
+#         token = Sys.getenv("SLACK_BOT_USER_OAUTH_TOKEN"),
+#         incoming_webhook_url = Sys.getenv("SLACK_INCOMING_URL_PREFIX"),
+#         username = Sys.getenv("SLACK_USERNAME"),
+#         channel = Sys.getenv("SLACK_CHANNEL")
+#     )
+# }
+# slackr_setup(
+#     config_file = "./config.dcf"
+# )
 
 slack_send <- function(msg) {
     loginfo(glue("Sending message: {msg}"))
-    slackr_msg(msg)
+    # slackr_msg(msg)
 }
 
 # ----- Data from Rivals -----
@@ -103,26 +103,52 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
 
         name <- trim(pred$name)
         link <- as.character(pred$plink)
-        pos <- trim(pred$pos)
+        pos <- str_trim(pred$pos)
+        if (pos == "") {
+            pos = "Player"
+        }
+        ht <- str_trim(pred$ht)
+        wt <- str_trim(pred$wt)
         # rank <- trim(pred$star)
-        ht <- trim(pred$ht)
-        wt <- trim(pred$wt)
+
         predictor <- trim(pred$predictor)
         # acc <- trim(pred$acc)
         # star <- trim(pred$star)
         confidence <- trim(pred$confidence)
+        player_page = read_html(link)
 
-        player_page <- read_html(link) %>% html_nodes(".upper-cards") %>% html_nodes(".details") %>%
-            html_nodes("li") %>% html_nodes("span") %>% html_text()
-        hs <- player_page[2]
-        hs <- gsub("\n                            ","",hs)
-        hs <- gsub("\n                        ","",hs)
-        hs <- trim(hs)
-        hometowm <- data.frame(state = player_page[4])
+        metrics = player_page %>%
+            html_node(".upper-cards") %>%
+            html_elements(".metrics-list > li")
+        if (length(metrics) > 0) {
+            positions = metrics[1] %>% html_elements('span') %>% html_text()
+            pos <- str_trim(positions[2])
+        }
+
+        if (length(metrics) > 1) {
+            heights = metrics[2] %>% html_elements('span') %>% html_text()
+            ht <- str_trim(heights[2])
+        }
+
+        if (length(metrics) > 2) {
+            weights = metrics[3] %>% html_elements('span') %>% html_text()
+            wt <- trim(weights[2])
+        }
+
+        details <- player_page %>%
+            html_nodes(".upper-cards") %>%
+            html_nodes(".details") %>%
+            html_nodes("li") %>%
+            html_nodes("span") %>%
+            html_text()
+        hs <- str_trim(details[2])
+        hometowm <- data.frame(state = details[4])
         sep <- hometowm %>% separate(col = state, into = c("Town", "State"), sep = ", ")
         state <- sep$State
 
         composite_info = grab_composite_content(link)
+        team_interests = grab_team_interests(link)
+        offer_string = format_offers_string(team_interests, power_only = TRUE)
 
         assembled_str = ""
         if (!is.na(composite_info$stars)) {
@@ -151,6 +177,7 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
             {hs} ({state})
 
             {assembled_str}
+            P5 Offers: {offer_string}
 
             By: {predictor}
             Confidence: {confidence}/10
@@ -165,5 +192,5 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
     }
 }
 
-loginfo("Tearing down Slack integration after use")
-slackr_teardown()
+# loginfo("Tearing down Slack integration after use")
+# slackr_teardown()
