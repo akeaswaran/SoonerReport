@@ -439,6 +439,6 @@ new_cbs <- final_cbs %>%
     mutate(
         elapsed = as.double(difftime(prediction_date, last_updated, units = "secs"))
     ) %>%
-    filter(elapsed >= -10000000 & (grepl(selected_school, prediction_team) == TRUE))
+    filter(elapsed >= 0 & (grepl(selected_school, prediction_team) == TRUE))
 
 loginfo(glue("Found {nrow(new_cbs)} Crystal Balls that match given criteria."))
