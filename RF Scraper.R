@@ -123,7 +123,7 @@ query_croots <- function(name, year) {
             \"recruit_year\": \"",year,"\"
         }
     }")
-    croot_req <- POST("https://n.rivals.com/api/v1/people", add_headers(
+    croot_req <- POST("https://n.rivals.com/api/v1/people", config = httr::config(http_version = 1.1),  add_headers(
         "User-Agent"="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:85.0) Gecko/20100101 Firefox/85.0",
         Accept="application/json, text/plain, */*",
         "Accept-Language"="en-US,en;q=0.5",
@@ -193,7 +193,8 @@ if (total > 0) {
                     }
 
                     result$colleges_interested <- c(colleges_interested_str)
-                    expanded_data <- rbind(expanded_data, result %>% select(-prospect_colleges))
+                    expanded_data <- expanded_data %>%
+                        rbind(result %>% select(-prospect_colleges))
                 } else {
                     loginfo(glue("Did not find Rivals API data for {name} (ID: {player_id}, Year: {year})"))
                 }
@@ -212,7 +213,8 @@ if (total > 0) {
             year = as.numeric(year)
         )
 
-    futurecasts <- left_join(futurecasts, expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
+    futurecasts <- futurecasts %>%
+        left_join(expanded_data, by = c("player_id" = "prospect_id", "year" = "year"))
     loginfo(glue("Found and joined expanded info for {nrow(futurecasts)} total FutureCasts"))
 
     loginfo(glue("Filtering {nrow(futurecasts)} total FutureCasts based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})"))
