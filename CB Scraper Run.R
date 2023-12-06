@@ -2,6 +2,7 @@ library(rvest)
 library(tidyverse)
 library(lubridate)
 library(glue)
+library(stringr)
 library(logging)
 library(httr)
 basicConfig()
@@ -271,147 +272,156 @@ query_crystal_balls <- function(url) {
 
     loginfo(glue("Scraping 247 URL at {url}"))
 
-    cb <- read_html(url)
+    cb_page <- read_html(url)
 
-    span <- cb %>%
-        html_elements("span") %>%
-        html_attr("class")
+    cb_list <- cb_page %>%
+        html_node('ul.cb-player-list') %>%
+        html_nodes('li.target')
 
-    loginfo(glue("Found {length(span)} 247 Crystal Balls, parsing..."))
+    loginfo(glue("Found {length(cb_list)} 247 Crystal Balls, parsing..."))
+    cb_results = list()
+    for (cb in cb_list) {
+        player_name = cb %>%
+            html_node(".name > a") %>%
+            html_text(trim = T) # will have class year
 
-    image_names<-cb %>% html_nodes("img") %>% html_attr("alt")
-    image_height<-cb %>% html_nodes("img") %>% html_attr("height")
-    image_class<-cb %>% html_nodes("img") %>% html_attr("class")
-    plinks<-cb %>% html_nodes("a") %>% html_attr("href")
-    pred_date<-cb %>% html_elements(".prediction-date") %>% html_text()
-    player_names<-cb %>% html_nodes(".name")
-    names <- html_children(player_names)
-    predictor_names<-cb %>% html_nodes(".predicted-by") %>% html_nodes("a") %>%
-        html_nodes("span") %>% html_text()
-    forecaster_links <- cb %>% html_elements(".predicted-by") %>% html_elements("a") %>% html_attr("href")
-    flinks <- data.frame(link = forecaster_links, number = 1:length(forecaster_links))
-    confidence<-cb %>% html_nodes(".confidence") %>% html_nodes(".confidence-wrap") %>%
-        html_text()
-    confidence <- data.frame(confidence <- confidence)
-    sep <- confidence %>% separate(col = confidence....confidence, into = c("A", "B", "C"), sep = "                ")
-    confidence <- sep$B
-    confidence <- gsub("\n","",confidence)
+        player_measures = cb %>%
+            html_node(".name > span") %>%
+            html_text(trim = T)
 
-    player_info <- data.frame()
+        player_rating = cb %>%
+            html_node(".name > .ranking > b") %>%
+            html_text(trim = T)
 
-    rng <- length(player_names)-1
+        player_stars = cb %>%
+            html_nodes(".name > .ranking > span.yellow") %>%
+            length(.)
 
-    for(i in 0:rng) {
-        info <- data.frame(name = html_text(names[[((i*3)+1)]]),
-                           pos = html_text(names[[((i*3)+2)]]),
-                           rank = html_text(names[[((i*3)+3)]]))
+        player_url = cb %>%
+            html_node(".name > a") %>%
+            html_attr("href")
 
-        player_info <- bind_rows(player_info, info)
-    }
+        predictor_url <- cb %>%
+            html_node(".predicted-by > a") %>%
+            html_attr("href")
 
-    player_info$number <- 1:nrow(player_info)
+        predictor_info <- cb %>%
+            html_nodes(".predicted-by > a > span") %>%
+            html_text(trim = T) %>%
+            paste(., collapse = ";")
 
-    images <- data.frame(names = image_names, height = as.integer(image_height), class = image_class)
-    images$class <- replace_na(images$class, "")
-    teams <- images %>% dplyr::filter(height == 24, class != "old")
+        predictor_accuracy <- cb %>%
+            html_nodes(".accuracy > span") %>%
+            html_text(trim = T) %>%
+            paste(., collapse = ";")
 
-    zero <- data.frame(name = span)
-    zero <- zero %>% dplyr::slice(31:((nrow(player_info)*14)+31))
+        prediction_date <- cb %>%
+            html_node(".prediction > .prediction-date") %>%
+            html_text(trim = T)
 
-    zeroes <- which(zero == "icon-zero")
-    emptys <- floor(zeroes/14)
-    emptys <- sort(emptys)
+        prediction_content_classes <- cb %>%
+            html_node(".prediction > div") %>%
+            html_children() %>%
+            html_attr("class")
 
-    if(length(emptys!=0)) {
-        teams$number <- 1:nrow(teams)
-        for(i in 1:length(emptys)) {
-            current_empty <- emptys[i]
-            cut <- teams %>% dplyr::filter(number>(current_empty-1))
-            teams <- teams %>% dplyr::filter(number<(current_empty))
-            cut <- cut %>% mutate(new = number+1) %>% select(-number, number = new)
-            teams <- bind_rows(teams, cut)
-            new_row <- data.frame(names = "icon-zero", height = 24, number = current_empty)
-            teams <- bind_rows(teams, new_row)
+        prediction_type = "normal"
+        if ("flipped-wrap" %in% prediction_content_classes) {
+            prediction_team <- cb %>%
+                html_node(".prediction > div > .flipped-wrap > img") %>%
+                html_attr("alt")
+            flipped_from = cb %>%
+                html_node(".prediction > div > img") %>%
+                html_attr("alt")
+
+            prediction_type = "flip"
+        } else {
+            prediction_team <- cb %>%
+                html_node(".prediction > div > img") %>%
+                html_attr("alt")
+            flipped_from = NA_character_
+            prediction_type = "normal"
         }
-    } else{
-        teams$number <- 1:nrow(player_info)
+
+        predictor_confidence <- cb %>%
+            html_node(".confidence > .confidence-wrap > .confidence-score") %>%
+            html_text(trim = T)
+        # browser()
+        result = data.frame(
+            "player_name" = player_name,
+            "player_url" = player_url,
+            "player_stars" = player_stars,
+            "player_rating" = player_rating,
+            "player_measures" = player_measures,
+            "predictor_url" = predictor_url,
+            "predictor_info" = predictor_info,
+            "predictor_accuracy" = predictor_accuracy,
+            "prediction_date" = prediction_date,
+            "prediction_team" = prediction_team,
+            "prediction_flipped_from" = flipped_from,
+            "prediction_type" = prediction_type,
+            "predictor_confidence" = predictor_confidence
+        )
+        # browser()
+        cb_results = append(cb_results, list(result))
     }
-    pred_date <- as.data.frame(pred_date)
-    pred_date$number = 1:nrow(pred_date)
-    teams <- left_join(teams, pred_date, by="number")
 
-    targets <- data.frame(plink = plinks)
-    sep <- targets %>% separate(col = plink, into = c("prefix", "body"), sep = 8)
-    sep <- sep %>% separate(col = "body", into = c("site", "body"), sep = 9)
-    sep <- sep %>% separate(col = "body", into = c("suffix", "body"), sep = 5)
-    sep <- sep %>% separate(col = "body", into = c("type", "body"), sep = 6)
-    targets <- targets %>% mutate(site = sep$site, type = sep$type) %>% filter(type == "Player")
-    targets$number = 1:nrow(targets)
+    current_year = year(now())
+    current_month = month(now())
 
-    new_names <- data.frame(name = player_info$name)
-    sep <- new_names %>% separate(col = name, into = c("A", "B", "C", "D", "E"), sep = "                ")
-    player_info$name <- sep$B
-    player_info$name <- gsub("\n","",player_info$name)
+    cb_df_raw = bind_rows(cb_results)
+    cb_df = cb_df_raw %>%
+        mutate(
+            player_class_year = str_extract(player_name, "\\(\\d+\\)"),
+            player_class_year = str_replace_all(player_class_year, "[\\(\\)]", ""),
+            player_class_year = str_trim(player_class_year),
+            player_class_year = as.numeric(player_class_year),
+            player_type = case_when(
+                 player_class_year > current_year ~ "high_school",
+                 (current_month >= 7) & (player_class_year == (current_year + 1)) ~ "high_school",
+                TRUE ~ "transfer"
+            ),
+            player_rating = case_when(
+                player_rating == "NA" ~ NA_character_,
+                TRUE ~ player_rating
+            ),
+            player_stars = case_when(
+                player_stars == 0 ~ NA_integer_,
+                TRUE ~ player_stars
+            ),
+            player_stars = as.numeric(player_stars),
 
-    new_pos <- data.frame(pos = player_info$pos)
-    sep <- new_pos %>% separate(col = pos, into = c("A", "B", "C"), sep = "/")
-    new_pos$pos <- sep$A
-    new_pos$ht <- sep$B
-    new_pos$wt <- sep$C
-    new_pos$pos <- gsub("\n                ","",new_pos$pos)
-    sep3 <- new_pos %>% separate(col = wt, into = c("A", "B"), sep = "            ")
-    player_info$ht <- sep3$ht
-    player_info$ht <- gsub(" ","",player_info$ht)
-    player_info$wt <- sep3$A
-    player_info$wt <- gsub(" |\n","",player_info$wt)
-    player_info <- player_info %>% mutate(wt = as.integer(wt))
-    player_info$pos <- new_pos$pos
+            player_name = str_replace(player_name, "\\(\\d+\\)", ""),
+            player_name = str_trim(player_name),
 
-    new_rank <- data.frame(rank = player_info$rank)
-    sep <- new_rank %>% separate(col = rank, into = c("A", "B"), sep = "                \n                ")
-    new_rank$rank <- sep$B
-    sep <- new_rank %>% separate(col = rank, into = c("A", "B"), sep = "            ")
-    player_info$rank <- sep$A
-    # player_info <- player_info %>%
-    #     mutate(
-    #         rank = trim(rank),
-    #         rank = case_when(
-    #             # is.na(rank) ~ 0.0,
-    #             (grepl("NA", rank) == TRUE) ~ 0,
-    #             TRUE ~ as.numeric(rank)
-    #         ),
-    #         star = case_when(
-    #             # (rank > 0.9832) ~ "5-Star",
-    #             # (rank > 0.8900) ~ "4-Star",
-    #             # (rank == 0.0) ~ "",
-    #             # TRUE ~ "3-Star"
-    #             rank >= 98 & rank <= 110 ~ "5-Star",
-    #             rank >= 90 & rank <= 97 ~ "4-Star",
-    #             rank >= 80 & rank <= 89 ~ "3-Star",
-    #             rank >= 70 & rank <= 79 ~ "2-Star",
-    #             # rank >= 98 & rank <= 110 ~ "1-Star",
-    #             .default = ""
-    #         )
-    #     )
+            prediction_date = as_datetime(prediction_date, format = "%m/%d/%y %R%p"),
 
-    cb_list <- left_join(teams, targets, by="number")
-    loginfo(glue("Parsed/Cleaned {nrow(cb_list)} records from 247Sports link {url}"))
+            player_position = str_extract(player_measures, "^\\w+ /"),
+            player_position = str_replace(player_position, "/", ""),
+            player_position = str_trim(player_position),
+            player_height = str_extract(player_measures, " / .* / "),
+            player_height = str_replace_all(player_height, "/", ""),
+            player_height = str_trim(player_height),
+            player_weight = str_extract(player_measures, "/ \\w+$"),
+            player_weight = str_replace_all(player_weight, "/", ""),
+            player_weight = str_trim(player_weight),
 
-    cb_list$pred_date <- with_tz(mdy_hm(cb_list$pred_date, tz = "America/New_York"), tzone = "UTC")
+            predictor_name = str_extract(predictor_info, "^.*;"),
+            predictor_name = str_replace(predictor_name, ";", ""),
+            predictor_position = str_extract(predictor_info, ";.*$"),
+            predictor_position = str_replace(predictor_position, ";", ""),
 
-    cb_list <- cb_list %>% mutate(elapsed = as.double(difftime(pred_date,
-                                                               last_updated,
-                                                               units = "secs")))
-
-    cb_list <- left_join(cb_list, player_info, by="number")
-    seqA <- seq(1,(length(predictor_names)-1), by = 2)
-    seqB <- seq(2,length(predictor_names), by=2)
-    predictor_info <- data.frame(predictor = predictor_names[seqA],
-                                 title = predictor_names[seqB],
-                                 flink = flinks$link, number = 1:nrow(flinks))
-    predictor_info$confidence <- as.integer(confidence)
-    cb_list <- left_join(cb_list, predictor_info, by="number")
-    return(cb_list)
+            predictor_accuracy = str_replace(predictor_accuracy, "Accuracy:;", ""),
+            predictor_accuracy_pct = str_extract(predictor_accuracy, "^.*;"),
+            predictor_accuracy_pct = str_replace_all(predictor_accuracy_pct, "[\\(\\);]", ""),
+            predictor_accuracy_raw = str_extract(predictor_accuracy, ";.*$"),
+            predictor_accuracy_raw = str_replace(predictor_accuracy_raw, ";", "")
+        ) %>%
+        select(
+            -predictor_accuracy,
+            -player_measures,
+            -predictor_info
+        )
+    return(cb_df)
 }
 
 final_cbs <<- data.frame()
@@ -423,9 +433,12 @@ for (item in links) {
 loginfo(glue("Found {nrow(final_cbs)} total Crystal Balls, deduping and filtering based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})..."))
 
 new_cbs <- final_cbs %>%
-    group_by(predictor, name, names) %>%
-    slice(1) %>%
+    group_by(predictor_name, player_name, prediction_team) %>%
+    slice_min(order_by = row_number(), n = 1) %>%
     ungroup() %>%
-    filter(elapsed >= 0 & (grepl(selected_school, names) == TRUE))
+    mutate(
+        elapsed = as.double(difftime(prediction_date, last_updated, units = "secs"))
+    ) %>%
+    filter(elapsed >= -10000000 & (grepl(selected_school, prediction_team) == TRUE))
 
 loginfo(glue("Found {nrow(new_cbs)} Crystal Balls that match given criteria."))

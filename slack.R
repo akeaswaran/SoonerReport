@@ -99,22 +99,22 @@ if (exists("new_cbs") && nrow(new_cbs) > 0) {
     loginfo("Iterating through Crystal Balls and sending messages...")
     for(i in 1:nrow(new_cbs)) {
 
-        pred <- new_cbs %>% slice(i)
+        pred <- new_cbs[i, ]
 
-        name <- trim(pred$name)
-        link <- as.character(pred$plink)
-        pos <- str_trim(pred$pos)
-        if (pos == "") {
+        name <- trim(pred$player_name)
+        link <- as.character(pred$player_url)
+        pos <- str_trim(pred$player_position)
+        if (is.na(pos) || pos == "") {
             pos = "Player"
         }
-        ht <- str_trim(pred$ht)
-        wt <- str_trim(pred$wt)
+        ht <- str_trim(pred$player_height)
+        wt <- str_trim(pred$player_weight)
         # rank <- trim(pred$star)
 
-        predictor <- trim(pred$predictor)
+        predictor <- trim(pred$predictor_name)
         # acc <- trim(pred$acc)
         # star <- trim(pred$star)
-        confidence <- trim(pred$confidence)
+        confidence <- trim(pred$predictor_confidence)
         player_page = read_html(link)
 
         metrics = player_page %>%
