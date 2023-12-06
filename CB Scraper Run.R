@@ -228,7 +228,7 @@ grab_team_interests <- function(player_url) {
         mutate(
             recruiters = case_when(
                 recruiters == "NA" ~ NA_character_,
-                .default = recruiters
+                TRUE ~ recruiters
             )
         )
 
