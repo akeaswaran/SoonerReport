@@ -97,7 +97,7 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
 # ----- Data from 247 -----
 if (exists("new_cbs") && nrow(new_cbs) > 0) {
     loginfo("Iterating through Crystal Balls and sending messages...")
-    for(i in 1:nrow(new_cbs)){
+    for(i in 1:nrow(new_cbs)) {
 
         pred <- new_cbs %>% slice(i)
 

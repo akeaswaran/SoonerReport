@@ -135,6 +135,10 @@ p5_teams = c(
 )
 
 format_offers_string <- function(team_interests, power_only = TRUE) {
+    if (nrow(team_interests) == 0) {
+        return("No offers or visits available.")
+    }
+
     teams_offered = team_interests %>%
         filter(offer)
 
@@ -162,6 +166,18 @@ grab_team_interests <- function(player_url) {
 
     # player_recruitment_url = "https://247sports.com/recruitment/jameson-riggs-156395/recruitinterests/"
     #
+    if (is.na(player_recruitment_url) || is.null(player_recruitment_url)) {
+        return(
+            data.frame(
+                "team" = NA_character_,
+                "visit" = NA_character_,
+                "offer" = NA_character_,
+                "recruiters" = NA_character_
+            ) %>%
+                head(0)
+        )
+    }
+
     interests = read_html(player_recruitment_url)
 
     interest_records = interests %>%
@@ -208,13 +224,13 @@ grab_team_interests <- function(player_url) {
         "visit" = visit,
         "offer" = offer,
         "recruiters" = paste0(recruiters)
-    )
-    recruit_interests$recruiters = sapply(recruit_interests$recruiters, function (x) {
-        if (x == "NA") {
-            return(NA_character_)
-        }
-        return(x)
-    })
+    ) %>%
+        mutate(
+            recruiters = case_when(
+                recruiters == "NA" ~ NA_character_,
+                .default = recruiters
+            )
+        )
 
     return(recruit_interests)
 }
