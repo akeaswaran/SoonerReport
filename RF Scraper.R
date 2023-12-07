@@ -16,6 +16,93 @@ selected_rivals_prefix <- ifelse(is.na(selected_rivals_prefix) || str_length(sel
 
 national_rivals_prefix <- "n" # national Rivals Futurecast Feed
 
+p5_rivals_teams = c(
+    "georgia",
+    "ohio state",
+    "florida",
+    "michigan",
+    "alabama",
+    "penn state",
+    "notre dame",
+    "florida state",
+    "clemson",
+    "tennessee",
+    "texas a&m",
+    "lsu",
+    "usc",
+    "oklahoma",
+    "miami",
+    "stanford",
+    "arkansas",
+    "nebraska",
+    "texas",
+    "wisconsin",
+    "north carolina",
+    "georgia tech",
+    "purdue",
+    "south carolina",
+    "southern methodist",
+    "tulane",
+    "ole miss",
+    "auburn",
+    "iowa",
+    "minnesota",
+    "mississippi state",
+    "texas tech",
+    "rutgers",
+    "duke",
+    "pittsburgh",
+    "virginia tech",
+    "vanderbilt",
+    "arizona",
+    "cincinnati",
+    "west virginia",
+    "illinois",
+    "kansas",
+    "arizona state",
+    "ucf",
+    "kentucky",
+    "maryland",
+    "wake forest",
+    "syracuse",
+    "louisville",
+    "michigan state",
+    "washington",
+    "iowa state",
+    "nc state",
+    "oklahoma state",
+    "tcu",
+    "baylor",
+    "indiana",
+    "virginia",
+    "missouri",
+    "ucla",
+    "colorado",
+    "northwestern",
+    "oregon state",
+    "utah",
+    "boston college",
+    "washington state",
+    "california",
+    "kansas state",
+    "brigham young",
+    "houston"
+)
+
+format_interest_string <- function(interests_str, power_only = T) {
+    interests = str_split(interests_str, ",", simplify = T)
+    interests = str_trim(interests)
+    if (power_only) {
+        interests = interests[which(tolower(interests) %in% p5_rivals_teams)]
+    }
+
+    if (length(power_only) == 0) {
+        return("None")
+    } else {
+        return(paste0(interests, collapse = ", "))
+    }
+}
+
 query_futurecasts <- function(link) {
     rf_html <- read_html(link)
 
@@ -65,29 +152,11 @@ query_futurecasts <- function(link) {
     loginfo(glue("Found {nrow(ftrcsts)} recruit futurecast rows at link {link}..."))
     loginfo(glue("Cleaning data to properly format dates..."))
 
-    now <- now(tz = "UTC")
+    current_date <- lubridate::now(tz = "UTC")
     ftrcsts <- ftrcsts %>%
         mutate(
             forecaster = trim(forecaster),
             recruit = sapply(recruit, splitJoin),
-            time_since = gsub(" ago", "", gsub("about ", "", time_since)),
-            time_since = sapply(time_since, splitJoin),
-            unit_elapsed = case_when(
-                grepl("month", time_since) == TRUE ~ "month",
-                grepl("s", time_since) == TRUE ~ "second",
-                grepl("m", time_since) == TRUE ~ "minute",
-                grepl("h", time_since) == TRUE ~ "hour",
-                grepl("d", time_since) == TRUE ~ "day",
-                TRUE ~ "unknown"
-            ),
-            value_elapsed = as.numeric(gsub("d", "", gsub("h", "", gsub("m", "", gsub("s", "", gsub("month", "", time_since)))))),
-            date = case_when(
-                unit_elapsed == "second" ~ (now %m-% seconds(value_elapsed)),
-                unit_elapsed == "minute" ~ (now %m-% minutes(value_elapsed)),
-                unit_elapsed == "hour" ~ (now%m-% hours(value_elapsed)),
-                unit_elapsed == "day" ~ (now %m-% days(value_elapsed)),
-                unit_elapsed == "month" ~ (now %m-% months(value_elapsed))
-            ),
             player_id = as.numeric(sub(".*-", "", profile_url)),
             year = str_extract(full_text, "\\((\\d{4}),"),
             year = sub("\\D","", year),
@@ -97,18 +166,43 @@ query_futurecasts <- function(link) {
             forecasted_team = sub("\\.","", forecasted_team),
             forecasted_team = sub("is now unlikely", "", forecasted_team),
             forecasted_team = sapply(forecasted_team, splitJoin),
-            elapsed = as.double(difftime(date,
-                                         last_updated,
-                                         units = "secs")),
+            forecasted_team = as.character(forecasted_team),
             year = as.numeric(year),
             unlikely = if_else(grepl("unlikely", full_text, fixed = T), 1, 0),
             update = if_else(grepl("updates", full_text, fixed = T), 1, 0),
             original_school = if_else(update == 0, "None", str_extract(full_text, "from\\s+(.*)\\s+to\\s+")),
             original_school = sub("\\s+to\\s+","", original_school),
             original_school = sub("from\\s+","", original_school),
-            original_school = sapply(original_school, splitJoin)
-        ) %>%
-        select(-time_since, -unit_elapsed, -value_elapsed)
+            original_school = sapply(original_school, splitJoin),
+            original_school = as.character(original_school),
+        )
+
+    if (nrow(ftrcsts) > 0) {
+        ftrcsts = ftrcsts %>%
+            mutate(
+                time_since = gsub(" ago", "", gsub("about ", "", time_since)),
+                time_since = sapply(time_since, splitJoin),
+                unit_elapsed = case_when(
+                    grepl("month", time_since) == TRUE ~ "month",
+                    grepl("s", time_since) == TRUE ~ "second",
+                    grepl("m", time_since) == TRUE ~ "minute",
+                    grepl("h", time_since) == TRUE ~ "hour",
+                    grepl("d", time_since) == TRUE ~ "day",
+                    TRUE ~ "unknown"
+                ),
+                value_elapsed = as.numeric(gsub("d", "", gsub("h", "", gsub("m", "", gsub("s", "", gsub("month", "", time_since)))))),
+                date = case_when(
+                    unit_elapsed == "second" ~ (current_date %m-% seconds(value_elapsed)),
+                    unit_elapsed == "minute" ~ (current_date %m-% minutes(value_elapsed)),
+                    unit_elapsed == "hour" ~ (current_date %m-% hours(value_elapsed)),
+                    unit_elapsed == "day" ~ (current_date %m-% days(value_elapsed)),
+                    unit_elapsed == "month" ~ (current_date %m-% months(value_elapsed))
+                ),
+                elapsed = date - last_updated
+            ) %>%
+            select(-time_since, -unit_elapsed, -value_elapsed)
+    }
+
     return(ftrcsts)
 }
 
@@ -164,7 +258,8 @@ loginfo(glue("Found {nrow(futurecasts)} FutureCasts from team and national feeds
 
 expanded_data <- data.frame()
 player_slim_list <- futurecasts %>%
-    select(recruit, player_id, year) %>% group_by(player_id, year) %>%
+    select(recruit, player_id, year) %>%
+    group_by(player_id, year) %>%
     summarise(recruit = first(recruit))
 total <- nrow(player_slim_list)
 
@@ -220,11 +315,10 @@ if (total > 0) {
     loginfo(glue("Filtering {nrow(futurecasts)} total FutureCasts based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})"))
     futurecasts <- futurecasts %>%
         filter(
-            (grepl(selected_school, forecasted_team) == TRUE) &
-            (unlikely == 0) &
-            (elapsed >= 0) &
-            (as.numeric(year) == as.numeric(target_year)) &
-            (grepl(selected_school, colleges_interested) == TRUE)
+            (forecasted_team == selected_school | original_school == selected_school | grepl(selected_school, colleges_interested))
+            # # (unlikely == 0) &
+            & (elapsed >= 0)
+            & (as.numeric(year) == target_year)
         )
     loginfo(glue("Found {nrow(futurecasts)} FutureCasts that match criteria, sending to posting services"))
 } else {

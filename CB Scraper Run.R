@@ -132,7 +132,10 @@ p5_teams = c(
     "california",
     "kansas state",
     "brigham young",
-    "houston"
+    "houston",
+    "smu",
+    "southern methodist",
+    "tulane"
 )
 
 format_offers_string <- function(team_interests, power_only = TRUE) {

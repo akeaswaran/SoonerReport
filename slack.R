@@ -53,6 +53,9 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
         is_update <- futurecasts[row, "update"]
         is_unlikely <- futurecasts[row, "unlikely"]
 
+        colleges_interested = futurecasts[row, "colleges_interested"]
+        colleges_interested = format_interest_string(colleges_interested)
+
         if (is_update == 1 && is_unlikely == 0) {
             text <- glue(
             "🚨 {selected_school} FutureCast
@@ -60,28 +63,63 @@ if (exists("futurecasts") && nrow(futurecasts) > 0) {
             {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to {new_school}
 
             {ht} / {wt}
-            {hs} ({hometown})
+            {hometown}
+
+            P5 Programs Interested: {colleges_interested}
+
             {link}")
 
         } else if (is_unlikely == 1) {
             text <- glue(
-            "🚨 {selected_school} FutureCast
+            "🚨 {selected_school} FutureCast Update
 
             {predictor} updates forecast for {year} {rank}-Star {pos} {name} from {og_school} to be unlikely
 
             {ht} / {wt}
-            {hs} ({hometown})
+            {hometown}
+
+            P5 Programs Interested: {colleges_interested}
+
             {link}")
 
+        } else if (og_school == selected_school) {
+            text <- glue(
+            "🚨 New FutureCast - {og_school} 🔄 {new_school}
+
+            {year} {rank}-Star {pos} {name}
+            {ht} / {wt}
+            {hometown}
+
+            By: {predictor}
+
+            P5 Programs Interested: {colleges_interested}
+
+            {link}")
+        } else if (grepl(selected_school, colleges_interested)) {
+            text <- glue(
+            "🚨 New FutureCast - {selected_school} Interest
+
+            {year} {rank}-Star {pos} {name}
+            {ht} / {wt}
+            {hometown}
+
+            By: {predictor}
+            To: {new_school}
+
+            P5 Programs Interested: {colleges_interested}
+
+            {link}")
         } else {
             text <- glue(
             "🚨 New {selected_school} FutureCast
 
             {year} {rank}-Star {pos} {name}
             {ht} / {wt}
-            {hs} ({hometown})
+            {hometown}
 
             By: {predictor}
+
+            P5 Programs Interested: {colleges_interested}
 
             {link}")
         }
