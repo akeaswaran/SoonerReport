@@ -315,7 +315,7 @@ if (total > 0) {
     loginfo(glue("Filtering {nrow(futurecasts)} total FutureCasts based on criteria: school ({selected_school}), year ({target_year}), and time since last updated ({last_updated})"))
     futurecasts <- futurecasts %>%
         filter(
-            (forecasted_team == selected_school | original_school == selected_school | grepl(selected_school, colleges_interested))
+            (forecasted_team == selected_school | original_school == selected_school)
             # # (unlikely == 0) &
             & (elapsed >= 0)
             & (as.numeric(year) == target_year)
